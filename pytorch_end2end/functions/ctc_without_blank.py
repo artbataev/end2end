@@ -9,9 +9,6 @@ from torch.autograd import Function, Variable
 
 from .utils import log_sum_exp
 
-DEBUG = False
-DELIMITER = "=" * 50 + "\n"
-
 
 @numba.jit(nogil=True)
 def _asg_loss(logits, targets, space_idx):
@@ -91,10 +88,6 @@ def _asg_loss(logits, targets, space_idx):
         for l in range(num_labels):
             negative_term = np.exp(prob_sum[l] - loss_forward)
             grad[t, l] = np.exp(logits[t, l]) - negative_term
-    # if DEBUG:
-    #     print(DELIMITER + "\nALPHA\n {} \nloss {}\n".format(log_alpha, loss_forward) + ("=" * 50) + "\n" + \
-    #           DELIMITER + "\nBETA\n {}\n".format(log_beta) + DELIMITER + "\nGRAD\n {}\n".format(grad) + DELIMITER)
-
     return -loss_forward, grad
 
 
@@ -159,7 +152,6 @@ class CTCWithoutBlankLossFunction(Function):
 
 
 if __name__ == "__main__":
-    # test with python -m losses.asg_loss
     from torch.autograd import gradcheck
 
     # gradchek takes a tuple of tensor as input, check if your gradient
@@ -186,7 +178,6 @@ if __name__ == "__main__":
 
     sum_target_len = np.sum(targets_sizes)
     targets_flat = (np.random.rand(sum_target_len) * alphabet_size).astype(np.int64)
-    # print(DELIMITER * 2, targets_flat, inputs.shape, inputs, DELIMITER * 2)
 
     input = (nn.LogSoftmax(dim=2)(Variable(torch.FloatTensor(inputs), requires_grad=True)),
              Variable(torch.LongTensor(targets_flat), requires_grad=False),

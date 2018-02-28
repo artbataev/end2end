@@ -9,8 +9,6 @@ from torch.autograd import Function, Variable
 
 from .utils import log_sum_exp
 
-DEBUG = False
-
 
 @numba.jit(nogil=True)
 def _ctc_loss(logits, targets, blank_idx=0):
@@ -86,11 +84,6 @@ def _ctc_loss(logits, targets, blank_idx=0):
         for l in range(num_labels):
             negative_term = np.exp(prob_sum[l] - loss_forward)
             grad[t, l] = np.exp(logits[t, l]) - negative_term
-    # if DEBUG:
-    #     print(("=" * 50) + "\nALPHA\n {} \nloss {}\n".format(log_alpha, loss_forward) + ("=" * 50) + "\n" + \
-    #           ("=" * 50) + "\nBETA\n {}\n".format(log_beta) + ("=" * 50) + "\n" \
-    #                                                                            "GRAD\n {}\n".format(grad) + (
-    #                   "=" * 50) + "\n")
 
     return -loss_forward, grad
 
@@ -156,7 +149,6 @@ class CTCLossFunction(Function):
 
 
 if __name__ == "__main__":
-    # test with python -m losses.ctc_loss
     from torch.autograd import gradcheck
 
     # gradchek takes a tuple of tensor as input, check if your gradient
