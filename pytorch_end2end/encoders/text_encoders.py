@@ -17,6 +17,11 @@ class CTCEncoder:
             text = text.lower()
         return [self._char2num[c] for c in text if c in self._char2num]
 
+    def clean(self, text):
+        if self._to_lower:
+            text = text.lower()
+        return "".join(c for c in text if c in self._char2num)
+
     def greedy_decode_int(self, labels):
         result = [label for label, _ in itertools.groupby(labels) if label != 0]
         return result
@@ -70,6 +75,11 @@ class ASGEncoder:
             if i > 0 and encoded[i - 1] == c:
                 encoded[i] = self.num_symbols - 1  # last = "2"
         return encoded
+
+    def clean(self, text):
+        if self._to_lower:
+            text = text.lower()
+        return "".join(c for c in text if c in self._char2num)
 
     def greedy_decode_int(self, labels):
         result = [label for label, _ in itertools.groupby(labels)]
