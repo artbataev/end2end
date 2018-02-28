@@ -8,7 +8,7 @@ from torch.autograd import Variable
 import numba
 
 @numba.jit(nogil=True)
-def _get_best_labeling_asg_1d(logits, targets):
+def _get_alignment_asg_1d(logits, targets):
     """
     :param logits: seq_len * output_dim, after LogSoftmax!
     :param targets:
@@ -47,7 +47,7 @@ def _get_best_labeling_asg_1d(logits, targets):
     return best_labeling
 
 @numba.jit(nogil=True)
-def _get_best_labeling_ctc_1d(logits, targets):
+def _get_alignment_ctc_1d(logits, targets):
     """
     with respect to blank symbol
     :param logits: seq_len * output_dim, after LogSoftmax!
@@ -102,7 +102,7 @@ def _get_best_labeling_ctc_1d(logits, targets):
     return best_labeling
 
 
-def get_best_labelings_3d(logits_logsoftmax, targets_flat, input_sizes, targets_sizes, is_ctc=True):
+def get_alignment_3d(logits_logsoftmax, targets_flat, input_sizes, targets_sizes, is_ctc=True):
     targets_np = targets_flat.cpu().data.numpy()
     seq_len, batch_size, _ = logits_logsoftmax.size()
     targets_sizes_end = np.cumsum(targets_sizes.cpu().data.numpy())
@@ -114,9 +114,9 @@ def get_best_labelings_3d(logits_logsoftmax, targets_flat, input_sizes, targets_
     que = queue.Queue()
     threads = []
     if is_ctc:
-        func_1d = _get_best_labeling_ctc_1d
+        func_1d = _get_alignment_ctc_1d
     else:
-        func_1d = _get_best_labeling_asg_1d
+        func_1d = _get_alignment_asg_1d
 
     for i in range(batch_size):
         t = threading.Thread(target=lambda q, i, *args: q.put((i, func_1d(*args))),
@@ -153,7 +153,7 @@ class HardtargetsLoss(nn.Module):
         """
         logits_logsoftmax = nn.LogSoftmax(dim=2)(inputs)
         batch_size = targets_sizes.size()[0]
-        targets_flat_new = get_best_labelings_3d(logits_logsoftmax, targets_flat, input_sizes, targets_sizes,
+        targets_flat_new = get_alignment_3d(logits_logsoftmax, targets_flat, input_sizes, targets_sizes,
                                                   is_ctc=self._is_ctc)
         logits_logsoftmax_flat = torch.cat([logits_logsoftmax[:input_sizes.data[i], i, :] for i in range(batch_size)])
         if logits_logsoftmax.is_cuda:
