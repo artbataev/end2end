@@ -5,7 +5,7 @@ import string
 # replace("\u0130", "i").replace("\u0049", "\u0131") for Turkish
 
 class CTCEncoder:
-    def __init__(self, allowed_chars=string.ascii_lowercase + " " + "'", to_lower=True):
+    def __init__(self, allowed_chars=string.ascii_lowercase + " " + "'", to_lower=str.casefold):
         self.allowed_chars = allowed_chars
         self.num_symbols = len(allowed_chars) + 1
         self._char2num = {c: i + 1 for i, c in enumerate(self.allowed_chars)}
@@ -14,13 +14,15 @@ class CTCEncoder:
         self._to_lower = to_lower
 
     def encode(self, text):
-        if self._to_lower:
-            text = text.casefold()
+        if self._to_lower is not None:
+            text = self._to_lower(text)
+        text = " ".join(text.split())  # removing tabs, additional spaces, etc
         return [self._char2num[c] for c in text if c in self._char2num]
 
     def clean(self, text):
-        if self._to_lower:
-            text = text.casefold()
+        if self._to_lower is not None:
+            text = self._to_lower(text)
+        text = " ".join(text.split())  # removing tabs, additional spaces, etc
         return "".join(c for c in text if c in self._char2num)
 
     def greedy_decode_int(self, labels):
@@ -47,8 +49,9 @@ class CollapseCTCEncoder(CTCEncoder):
     """Collapse all repeated characters"""
 
     def encode(self, text):
-        if self._to_lower:
-            text = text.casefold()
+        if self._to_lower is not None:
+            text = self._to_lower(text)
+        text = " ".join(text.split())  # removing tabs, additional spaces, etc
         return [self._char2num[c] for c, _ in itertools.groupby(text) if c in self._char2num]
 
 
@@ -58,7 +61,7 @@ class ASGEncoder:
     Encoder for Auto Segmentation Criterion (and CTC without blank)
     """
 
-    def __init__(self, allowed_chars=" " + string.ascii_lowercase + "'", to_lower=True):
+    def __init__(self, allowed_chars=" " + string.ascii_lowercase + "'", to_lower=str.casefold):
         self.allowed_chars = allowed_chars
         self.num_symbols = len(allowed_chars) + 1  # "2" and ? "3" characters
         self._char2num = {c: i for i, c in enumerate(self.allowed_chars)}
@@ -68,9 +71,9 @@ class ASGEncoder:
         self._to_lower = to_lower
 
     def encode(self, text):
-        if self._to_lower:
-            text = text.strip().casefold()
-            text = " ".join(text.split())  # removing tags, additional spaces, etc
+        if self._to_lower is not None:
+            text = self._to_lower(text)
+        text = " ".join(text.split())  # removing tabs, additional spaces, etc
         encoded = [self._char2num[c] for c in text if c in self._char2num]
         for i, c in enumerate(encoded):
             if i > 0 and encoded[i - 1] == c:
@@ -78,8 +81,9 @@ class ASGEncoder:
         return encoded
 
     def clean(self, text):
-        if self._to_lower:
-            text = text.casefold()
+        if self._to_lower is not None:
+            text = self._to_lower(text)
+        text = " ".join(text.split())  # removing tabs, additional spaces, etc
         return "".join(c for c in text if c in self._char2num)
 
     def greedy_decode_int(self, labels):
