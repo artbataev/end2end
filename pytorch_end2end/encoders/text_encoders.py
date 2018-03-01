@@ -2,6 +2,7 @@
 import itertools
 import string
 
+# replace("\u0130", "i").replace("\u0049", "\u0131") for Turkish
 
 class CTCEncoder:
     def __init__(self, allowed_chars=string.ascii_lowercase + " " + "'", to_lower=True):
@@ -14,12 +15,12 @@ class CTCEncoder:
 
     def encode(self, text):
         if self._to_lower:
-            text = text.lower()
+            text = text.casefold()
         return [self._char2num[c] for c in text if c in self._char2num]
 
     def clean(self, text):
         if self._to_lower:
-            text = text.lower()
+            text = text.casefold()
         return "".join(c for c in text if c in self._char2num)
 
     def greedy_decode_int(self, labels):
@@ -47,7 +48,7 @@ class CollapseCTCEncoder(CTCEncoder):
 
     def encode(self, text):
         if self._to_lower:
-            text = text.lower()
+            text = text.casefold()
         return [self._char2num[c] for c, _ in itertools.groupby(text) if c in self._char2num]
 
 
@@ -78,7 +79,7 @@ class ASGEncoder:
 
     def clean(self, text):
         if self._to_lower:
-            text = text.lower()
+            text = text.casefold()
         return "".join(c for c in text if c in self._char2num)
 
     def greedy_decode_int(self, labels):
