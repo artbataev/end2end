@@ -72,18 +72,15 @@ def _ctc_loss(logits, targets, blank_idx=0):
                     log_beta[j, t] = log_sum_exp(log_beta[j, t], log_beta[j + 2, t + 1] + logits[
                         t + 1, extended_targets[j + 2]])
 
-    grad = np.zeros_like(logits)
     alpha_beta = log_alpha + log_beta
 
-    for t in range(prediction_len):
-        prob_sum = np.zeros(num_labels)
-        prob_sum[:] = -np.inf
-        for i in range(extended_targets_len):
-            current_label = extended_targets[i]
-            prob_sum[current_label] = log_sum_exp(prob_sum[current_label], alpha_beta[i, t])
-        for l in range(num_labels):
-            negative_term = np.exp(prob_sum[l] - loss_forward)
-            grad[t, l] = np.exp(logits[t, l]) - negative_term
+    prob_sum = np.zeros((prediction_len, num_labels))
+    prob_sum[:] = -np.inf
+    for i in range(extended_targets_len):
+        current_label = extended_targets[i]
+        prob_sum[:, current_label] = log_sum_exp(prob_sum[:, current_label], alpha_beta[i, :])
+    negative_term = prob_sum - loss_forward
+    grad = np.exp(logits) - np.exp(negative_term)
 
     return -loss_forward, grad
 
