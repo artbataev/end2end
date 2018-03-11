@@ -2,14 +2,15 @@
 Tests are based on the torch7 bindings for warp-ctc. Reference numbers are also obtained from the tests.
 file taken from https://github.com/SeanNaren/warp-ctc
 originals (not pytorch) https://github.com/baidu-research/warp-ctc
-test with python -m losses.test_ctc
+test with
+>> python -m tests.test_ctc
 """
 import unittest
 
 import torch
 from torch.autograd import Variable
 
-from .ctc_loss import CTCLoss
+from pytorch_end2end.modules.ctc_loss import CTCLoss
 
 places = 5
 DELIMITER = "=" * 50 + "\n"
@@ -31,9 +32,9 @@ def run_grads(label_sizes, labels, probs, sizes, after_softmax=False, blank_idx=
     grads = probs.grad
 
     if check_baidu_grads and blank_idx == 0:
-        from warpctc_pytorch import CTCLoss as CTCLoss_Baidu
+        from pytorch_end2end.modules.warp_ctc_wrapper import WarpCTCLoss as CTCLoss_Baidu
         probs = Variable(probs.data, requires_grad=True)
-        cost = CTCLoss_Baidu()(probs, labels, sizes, label_sizes)
+        cost = CTCLoss_Baidu(reduce=True)(probs, labels, sizes, label_sizes)
         cost.backward()
         grads_baidu = probs.grad
         print(DELIMITER * 3 + "GRADS BAIDU\n {}".format(grads_baidu) + DELIMITER + "Your GRADS \n {}".format(
@@ -45,8 +46,8 @@ def run_grads(label_sizes, labels, probs, sizes, after_softmax=False, blank_idx=
 
 class TestCases(unittest.TestCase):
     def test_simple(self):
-        probs = torch.FloatTensor([[[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.1, 0.6, 0.1, 0.1]]]).transpose(0, 1).contiguous()
-        labels = Variable(torch.IntTensor([1, 2]))
+        probs = torch.FloatTensor([[[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.1, 0.6, 0.1, 0.1]]]).contiguous()
+        labels = Variable(torch.IntTensor([[1, 2]]))
         label_sizes = Variable(torch.IntTensor([2]))
         sizes = Variable(torch.IntTensor([2]))
         cpu_cost, gpu_cost = run_grads(label_sizes, labels, probs, sizes, check_baidu_grads=True)
@@ -58,9 +59,10 @@ class TestCases(unittest.TestCase):
         probs = torch.FloatTensor([
             [[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.1, 0.6, 0.1, 0.1]],
             [[0.6, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.5, 0.2, 0.1]]
-        ]).contiguous()
+        ]).transpose(0, 1).contiguous()
 
-        labels = Variable(torch.IntTensor([1, 2, 1, 2]))
+        labels = Variable(torch.IntTensor([[1, 2],
+                                           [1, 2]]))
         label_sizes = Variable(torch.IntTensor([2, 2]))
         sizes = Variable(torch.IntTensor([2, 2]))
         cpu_cost, gpu_cost = run_grads(label_sizes, labels, probs, sizes, check_baidu_grads=True)
@@ -73,9 +75,9 @@ class TestCases(unittest.TestCase):
     #     probs = torch.FloatTensor([
     #         [[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.1, 0.6, 0.1, 0.1]],
     #         [[0.6, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.5, 0.2, 0.1]]
-    #     ]).contiguous() * multiplier
+    #     ]).transpose(0, 1).contiguous() * multiplier
     #
-    #     labels = Variable(torch.IntTensor([1, 2, 1, 2]))
+    #     labels = Variable(torch.IntTensor([[1, 2], [1, 2]]))
     #     label_sizes = Variable(torch.IntTensor([2, 2]))
     #     sizes = Variable(torch.IntTensor([2, 2]))
     #     cpu_cost, gpu_cost = run_grads(label_sizes, labels, probs, sizes, check_baidu_grads=True)
@@ -87,9 +89,9 @@ class TestCases(unittest.TestCase):
         probs = torch.FloatTensor([
             [[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.1, 0.6, 0.1, 0.1]],
             [[0.6, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.5, 0.2, 0.1]]
-        ]).contiguous()
+        ]).transpose(0, 1).contiguous()
 
-        labels = Variable(torch.IntTensor([1, 2]))
+        labels = Variable(torch.IntTensor([[1, 2], [0, 0]]))
         label_sizes = Variable(torch.IntTensor([2, 0]))
         sizes = Variable(torch.IntTensor([2, 2]))
         cpu_cost, gpu_cost = run_grads(label_sizes, labels, probs, sizes)
@@ -106,9 +108,9 @@ class TestCases(unittest.TestCase):
              [0.0037688, 0.0357786, 0.633813, 0.321418, 0.00249248, 0.00272882],
              [0.00331533, 0.0663296, 0.643849, 0.280111, 0.00283995, 0.0035545],
              [0.00623107, 0.458235, 0.396634, 0.123377, 0.00648837, 0.00903441]]
-        ]).transpose(0, 1).contiguous()
+        ]).contiguous()
 
-        labels = Variable(torch.IntTensor([1, 2, 3, 2, 1]))
+        labels = Variable(torch.IntTensor([[1, 2, 3, 2, 1]]))
         label_sizes = Variable(torch.IntTensor([5]))
         sizes = Variable(torch.IntTensor([5]))
         cpu_cost, gpu_cost = run_grads(label_sizes, labels, probs, sizes, after_softmax=True)
@@ -125,9 +127,9 @@ class TestCases(unittest.TestCase):
              [0.230246, 0.450868, 0.0389607, 0.038309, 0.0391602, 0.202456],
              [0.280884, 0.429522, 0.0326593, 0.0339046, 0.0326856, 0.190345],
              [0.423286, 0.315517, 0.0338439, 0.0393744, 0.0339315, 0.154046]]
-        ]).transpose(0, 1).contiguous()
+        ]).contiguous()
 
-        labels = Variable(torch.IntTensor([0, 1, 1, 0]))
+        labels = Variable(torch.IntTensor([[0, 1, 1, 0]]))
         label_sizes = Variable(torch.IntTensor([4]))
         sizes = Variable(torch.IntTensor([5]))
         cpu_cost, gpu_cost = run_grads(label_sizes, labels, probs, sizes, after_softmax=True, blank_idx=5)

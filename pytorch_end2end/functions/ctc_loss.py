@@ -88,12 +88,9 @@ def _ctc_loss(logits, targets, blank_idx=0):
     return -loss_forward, grad
 
 
-def _ctc_3d_loss(inputs, targets_flat, input_sizes, targets_sizes, blank_idx=0):
-    batch_size = len(input_sizes)
-    grads = np.zeros_like(inputs)
-
-    targets_sizes_end = np.cumsum(targets_sizes)
-    targets_sizes_start = targets_sizes_end - targets_sizes
+def _ctc_3d_loss(logits, targets, logits_lengths, targets_length, blank_idx=0):
+    batch_size = len(targets_length)
+    grads = np.zeros_like(logits)
 
     losses = np.zeros(batch_size)
 
@@ -102,8 +99,8 @@ def _ctc_3d_loss(inputs, targets_flat, input_sizes, targets_sizes, blank_idx=0):
     threads = []
     for i in range(batch_size):
         t = threading.Thread(target=lambda q, i, *args: q.put((i, _ctc_loss(*args))),
-                             args=(que, i, inputs[:input_sizes[i], i, :],
-                                   targets_flat[targets_sizes_start[i]:targets_sizes_end[i]], blank_idx))
+                             args=(que, i, logits[i, :logits_lengths[i], :],
+                                   targets[i, :targets_length[i]], blank_idx))
         threads.append(t)
         t.start()
     for t in threads:
@@ -111,7 +108,7 @@ def _ctc_3d_loss(inputs, targets_flat, input_sizes, targets_sizes, blank_idx=0):
 
     while not que.empty():
         i, (loss, grad) = que.get()
-        grads[:input_sizes[i], i, :] = grad
+        grads[i, :logits_lengths[i], :] = grad
         losses[i] = loss
 
     # iterative computation
@@ -125,13 +122,13 @@ def _ctc_3d_loss(inputs, targets_flat, input_sizes, targets_sizes, blank_idx=0):
 
 class CTCLossFunction(Function):
     @staticmethod
-    def forward(ctx, inputs, targets_flat, input_sizes, targets_sizes, blank_idx=0):
+    def forward(ctx, logits, targets, logits_lengths, targets_lengths, blank_idx=0):
         # inputs: expected shape of seqLength x batchSize x alphabet_size, after logsoftmax!
-        loss, grads = _ctc_3d_loss(inputs.cpu().numpy(), targets_flat.cpu().numpy(),
-                                   input_sizes.cpu().numpy(), targets_sizes.cpu().numpy(), blank_idx)
+        loss, grads = _ctc_3d_loss(logits.cpu().numpy(), targets.cpu().numpy(),
+                                   logits_lengths.cpu().numpy(), targets_lengths.cpu().numpy(), blank_idx)
         ctx.grads = torch.FloatTensor(grads)  # save for backward not works!
-        if inputs.is_cuda:
-            return torch.FloatTensor(loss).cuda(inputs.get_device())
+        if logits.is_cuda:
+            return torch.FloatTensor(loss).cuda(logits.get_device())
         return torch.FloatTensor(loss)
 
     @staticmethod

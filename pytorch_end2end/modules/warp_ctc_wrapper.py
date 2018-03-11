@@ -1,12 +1,11 @@
 import torch
 import torch.nn as nn
 
-from warpctc_pytorch import _CTC
-
 
 class WarpCTCLoss(nn.Module):
     def __init__(self, reduce=False):
         super(WarpCTCLoss, self).__init__()
+        from warpctc_pytorch import _CTC
         self.ctc = _CTC.apply
         self.reduce = reduce
 

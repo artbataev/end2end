@@ -11,16 +11,15 @@ class CTCLoss(nn.Module):
         self._reduce = reduce
         self._after_softmax = after_softmax
 
-    def forward(self, inputs, targets_flat, input_sizes, targets_sizes):
+    def forward(self, logits, targets, logits_lengths, targets_lengths):
         # seq_len, batch_size, alphabet_size = inputs.size()
         if self._after_softmax:
-            inputs_logsoftmax = torch.log(inputs)
+            logits_logsoftmax = torch.log(logits)
         else:
-            inputs_logsoftmax = nn.LogSoftmax(dim=2)(inputs)
+            logits_logsoftmax = nn.LogSoftmax(dim=2)(logits)
 
-        loss = CTCLossFunction().apply(inputs_logsoftmax, targets_flat, input_sizes, targets_sizes, self._blank_index)
-        # if DEBUG:
-        #     print("q {} {} {} {}".format(inputs, inputs_logsoftmax, targets_flat, loss))
+        loss = CTCLossFunction().apply(logits_logsoftmax, targets, logits_lengths, targets_lengths, self._blank_index)
+        
         if self._reduce:
             return loss.sum()
         else:
