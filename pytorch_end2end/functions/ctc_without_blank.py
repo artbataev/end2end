@@ -11,7 +11,7 @@ from .utils import log_sum_exp
 
 
 @numba.jit(nogil=True)
-def _asg_loss(logits, targets, space_idx):
+def _ctc_without_blank_loss(logits, targets, space_idx):
     """
     http://www.cs.toronto.edu/~graves/icml_2006.pdf
     :param logits: numpy array, sequence_len * num_labels
@@ -98,7 +98,7 @@ def _ctc_without_blank_3d_loss(logits, targets, logits_lengths, targets_length, 
     que = queue.Queue()
     threads = []
     for i in range(batch_size):
-        t = threading.Thread(target=lambda q, i, *args: q.put((i, _asg_loss(*args))),
+        t = threading.Thread(target=lambda q, i, *args: q.put((i, _ctc_without_blank_loss(*args))),
                              args=(que, i, logits[i, :logits_lengths[i], :],
                                    targets[i, :targets_length[i]], space_idx))
         threads.append(t)
