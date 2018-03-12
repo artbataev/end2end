@@ -1,11 +1,10 @@
 import queue
 import threading
 
+import numba
 import numpy as np
 import torch
-import torch.nn as nn
-from torch.autograd import Variable
-import numba
+
 
 @numba.jit(nogil=True)
 def _get_alignment_asg_1d(logits, targets):
@@ -45,6 +44,7 @@ def _get_alignment_asg_1d(logits, targets):
         i = path_alpha[i, k]
 
     return best_labeling
+
 
 @numba.jit(nogil=True)
 def _get_alignment_ctc_1d(logits, targets):
@@ -102,14 +102,13 @@ def _get_alignment_ctc_1d(logits, targets):
     return best_labeling
 
 
-def get_alignment_3d(logits_logsoftmax, targets_flat, input_sizes, targets_sizes, is_ctc=True):
-    targets_np = targets_flat.cpu().data.numpy()
-    seq_len, batch_size, _ = logits_logsoftmax.size()
-    targets_sizes_end = np.cumsum(targets_sizes.cpu().data.numpy())
-    targets_sizes_start = targets_sizes_end - targets_sizes.cpu().data.numpy()
+def get_alignment_3d(logits_logsoftmax, targets, logits_lengths, targets_lengths, is_ctc=True):
+    batch_size = logits_logsoftmax.size()[0]
 
-    logits_logsoftmax_numpy = logits_logsoftmax.cpu().data.numpy()
-    inputs_sizes_numpy = input_sizes.cpu().data.numpy()
+    logits_logsoftmax_np = logits_logsoftmax.cpu().data.numpy()
+    targets_np = targets.data.cpu().numpy()
+    logits_lengths_np = logits_lengths.data.cpu().numpy()
+    targets_lengths_np = targets_lengths.data.cpu().numpy()
 
     que = queue.Queue()
     threads = []
@@ -120,44 +119,16 @@ def get_alignment_3d(logits_logsoftmax, targets_flat, input_sizes, targets_sizes
 
     for i in range(batch_size):
         t = threading.Thread(target=lambda q, i, *args: q.put((i, func_1d(*args))),
-                             args=(que, i, logits_logsoftmax_numpy[:inputs_sizes_numpy[i], i, :],
-                                   targets_np[targets_sizes_start[i]:targets_sizes_end[i]]))
+                             args=(que, i, logits_logsoftmax_np[i, :logits_lengths_np[i]],
+                                   targets_np[i, :targets_lengths_np[i]]))
         threads.append(t)
         t.start()
     for t in threads:
         t.join()
 
-    targets_sizes_new_end = np.cumsum(input_sizes.cpu().data.numpy())
-    targets_sizes_new_start = targets_sizes_new_end - input_sizes.cpu().data.numpy()
-    targets_new = torch.LongTensor(int(targets_sizes_new_end[-1])).zero_()
+    targets_aligned = torch.LongTensor(batch_size, logits_logsoftmax.size()[1]).zero_()
     while not que.empty():
         i, best_labeling = que.get()
-        targets_new[targets_sizes_new_start[i]: targets_sizes_new_end[i]] = torch.LongTensor(best_labeling)
+        targets_aligned[i, :logits_lengths_np[i]] = torch.LongTensor(best_labeling)
 
-    return Variable(targets_new)
-
-
-class HardtargetsLoss(nn.Module):
-    def __init__(self, is_ctc, reduce=True):
-        super().__init__()
-        self._reduce = reduce
-        self._is_ctc = is_ctc
-
-    def forward(self, inputs, targets_flat, input_sizes, targets_sizes):
-        """
-        :param inputs: seq_length * batch_size x output_dim
-        :param targets_flat:
-        :param input_sizes:
-        :param targets_sizes:
-        :return:
-        """
-        logits_logsoftmax = nn.LogSoftmax(dim=2)(inputs)
-        batch_size = targets_sizes.size()[0]
-        targets_flat_new = get_alignment_3d(logits_logsoftmax, targets_flat, input_sizes, targets_sizes,
-                                                  is_ctc=self._is_ctc)
-        logits_logsoftmax_flat = torch.cat([logits_logsoftmax[:input_sizes.data[i], i, :] for i in range(batch_size)])
-        if logits_logsoftmax.is_cuda:
-            targets_flat_new = targets_flat_new.cuda(logits_logsoftmax.get_device())
-        loss = nn.NLLLoss(reduce=self._reduce, size_average=False)(logits_logsoftmax_flat, targets_flat_new) / targets_flat.size()[0] * batch_size
-        # loss2 = nn.CrossEntropyLoss(reduce=self._reduce)(torch.cat([inputs[:input_sizes.data[i], i, :] for i in range(batch_size)]), targets_flat_new)
-        return loss
+    return targets_aligned
