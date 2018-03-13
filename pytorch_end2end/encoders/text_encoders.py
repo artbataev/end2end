@@ -141,7 +141,7 @@ class ASGEncoder:
                 t += 1
             while t < cur_sequence_length:
                 cur_label = labels[i, t]
-                if cur_label != self._blank_idx and (t == 0 or cur_label != labels[i, t - 1]):
+                if t == 0 or cur_label != labels[i, t - 1]:
                     if cur_label == self._double_idx:
                         if decoded_lengths[i] > 0:
                             decoded_sequences[i, decoded_lengths[i]] = decoded_sequences[i, decoded_lengths[i] - 1]
