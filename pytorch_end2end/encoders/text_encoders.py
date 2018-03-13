@@ -104,8 +104,9 @@ class ASGEncoder:
             text = self._to_lower(text)
         text = " ".join(text.split())  # removing tabs, additional spaces, etc
         encoded = []
-        for c, num in itertools.groupby(text):
+        for c, group in itertools.groupby(text):
             encoded.append(self._char2num[c])
+            num = len(list(group))
             if num == 2:
                 encoded.append(self._double_idx)
             elif num > 2:
