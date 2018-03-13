@@ -45,7 +45,7 @@ class CTCEncoder:
             cur_sequence_length = sequence_lengths[i] if sequence_lengths is not None else max_sequence_length
             # assert cur_sequence_length > 0
             t = 0
-            while labels[i, t] == self._blank_idx and t < cur_sequence_length:
+            while t < cur_sequence_length and labels[i, t] == self._blank_idx:
                 t += 1
             while t < cur_sequence_length:
                 cur_label = labels[i, t]
