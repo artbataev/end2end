@@ -159,19 +159,15 @@ if __name__ == "__main__":
 
     np.random.seed(523)
 
-    targets_sizes = np.random.randint(1, max_targets_len + 1, batch_size)
-    inputs_sizes = targets_sizes + np.random.randint(0, (max_sequence_len - max_targets_len) + 1, batch_size)
-    inputs = np.random.randn(max_sequence_len, batch_size, alphabet_size)
-    # expected shape seqLength x batchSize x alphabet_size
+    targets_lengths = np.random.randint(1, max_targets_len + 1, batch_size)
+    logits_lengths = targets_lengths + np.random.randint(0, (max_sequence_len - max_targets_len) + 1, batch_size)
+    logits = np.random.randn(batch_size, max_sequence_len, alphabet_size)
+    targets = (1 + np.random.rand(batch_size, max_targets_len) * alphabet_size).astype(np.int64)
 
-    sum_target_len = np.sum(targets_sizes)
-    targets_flat = (np.random.rand(sum_target_len) * alphabet_size).astype(np.int64)
-
-    input = (nn.LogSoftmax(dim=2)(Variable(torch.FloatTensor(inputs), requires_grad=True)),
-             Variable(torch.LongTensor(targets_flat), requires_grad=False),
-             Variable(torch.LongTensor(inputs_sizes), requires_grad=False),
-             Variable(torch.LongTensor(targets_sizes), requires_grad=False))
-    # ASGLoss(space_idx=1)(*input)
-    print(CTCWithoutBlankLossFunction.apply(*input).data[0])
+    input = (nn.LogSoftmax(dim=2)(Variable(torch.FloatTensor(logits), requires_grad=True)),
+             Variable(torch.LongTensor(targets), requires_grad=False),
+             Variable(torch.LongTensor(logits_lengths), requires_grad=False),
+             Variable(torch.LongTensor(targets_lengths), requires_grad=False))
+    print(CTCWithoutBlankLossFunction.apply(*input).data)
     test = gradcheck(CTCWithoutBlankLossFunction.apply, input)  # , atol=1e-5, rtol=1e-5)
     print(test)
