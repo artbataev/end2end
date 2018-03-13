@@ -39,7 +39,7 @@ class CTCEncoder:
         labels = labels.cpu()
         batch_size = labels.size()[0]
         max_sequence_length = labels.size()[1] if sequence_lengths is None else torch.max(sequence_lengths)
-        decoded_sequences = np.zeros(labels.size(), dtype=np.int64)
+        decoded_sequences = np.zeros((batch_size, max_sequence_length), dtype=np.int64)
         decoded_lengths = np.zeros(batch_size, dtype=np.int64)
         for i in range(batch_size):
             cur_sequence_length = sequence_lengths[i] if sequence_lengths is not None else max_sequence_length
@@ -52,6 +52,7 @@ class CTCEncoder:
                 if cur_label != self._blank_idx and (t == 0 or cur_label != labels[i, t-1]):
                     decoded_sequences[i, decoded_lengths[i]] = cur_label
                     decoded_lengths[i] += 1
+                t += 1
 
         results_str = []
         for i in range(batch_size):
