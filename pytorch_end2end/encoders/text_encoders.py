@@ -155,6 +155,9 @@ class ASGEncoder:
                         decoded_sequences[i, decoded_lengths[i]] = cur_label
                         decoded_lengths[i] += 1
                 t += 1
+            if decoded_lengths[i] == 0:
+                decoded_lengths[i] = 1
+                decoded_sequences[i, 0] = self._space_idx
 
         results_str = []
         for i in range(batch_size):
