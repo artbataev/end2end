@@ -137,7 +137,7 @@ class CTCLossFunction(Function):
         loss_grads = Variable(ctx.grads)
         if grad_output.is_cuda:
             loss_grads = loss_grads.cuda(grad_output.get_device())
-        grad = loss_grads.contiguous() * grad_output.contiguous().view(1, -1, 1)
+        grad = loss_grads.contiguous() * grad_output.contiguous().view(-1, 1, 1)
         return grad, None, None, None, None
 
 
