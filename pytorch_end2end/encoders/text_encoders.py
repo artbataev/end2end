@@ -35,7 +35,7 @@ class CTCEncoder:
         :param sequence_lengths:
         :return:
         """
-        labels = torch.max(logits, axis=2)[1]
+        labels = torch.max(logits, dim=2)[1]
         labels = labels.cpu()
         batch_size = labels.size()[0]
         max_sequence_length = labels.size()[1] if sequence_lengths is None else torch.max(sequence_lengths)[0]
