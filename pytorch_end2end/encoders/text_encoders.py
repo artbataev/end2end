@@ -30,7 +30,7 @@ class CTCEncoder:
         text = " ".join(text.split())  # removing tabs, additional spaces, etc
         return "".join(c for c in text if c in self._char2num)
 
-    def decode_argmax(self, logits, sequence_lengths=None):
+    def decode_argmax(self, logits, sequence_lengths=None, convert_to_str=True):
         """
 
         :param logits: batch_size * sequence_length * num_labels
@@ -57,8 +57,9 @@ class CTCEncoder:
                 t += 1
 
         results_str = []
-        for i in range(batch_size):
-            results_str.append("".join(self._num2char[idx] for idx in decoded_sequences[i, :decoded_lengths[i]]))
+        if convert_to_str:
+            for i in range(batch_size):
+                results_str.append("".join(self._num2char[idx] for idx in decoded_sequences[i, :decoded_lengths[i]]))
 
         max_length = decoded_lengths.max()
         return torch.LongTensor(decoded_sequences[:, :max_length]), torch.LongTensor(decoded_lengths), results_str
@@ -120,7 +121,7 @@ class ASGEncoder:
         text = " ".join(text.split())  # removing tabs, additional spaces, etc
         return "".join(c for c in text if c in self._char2num)
 
-    def decode_argmax(self, logits, sequence_lengths=None):
+    def decode_argmax(self, logits, sequence_lengths=None, convert_to_str=True):
         """
 
         :param logits: batch_size * sequence_length * num_labels
@@ -160,8 +161,9 @@ class ASGEncoder:
                 decoded_sequences[i, 0] = self._space_idx
 
         results_str = []
-        for i in range(batch_size):
-            results_str.append(self.decode_list_full(decoded_sequences[i, :decoded_lengths[i]]).strip())
+        if convert_to_str:
+            for i in range(batch_size):
+                results_str.append(self.decode_list_full(decoded_sequences[i, :decoded_lengths[i]]).strip())
 
         max_length = decoded_lengths.max()
         return torch.LongTensor(decoded_sequences[:, :max_length]), torch.LongTensor(decoded_lengths), results_str
