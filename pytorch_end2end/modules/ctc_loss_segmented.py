@@ -39,12 +39,6 @@ class CTCLossSegmented(nn.Module):
             # our model is bad, do not try to segment
             return self.ctc(logits, targets, logits_lengths, targets_lengths)
 
-        logits_new = []
-        targets_new = []
-        logits_lengths_new = []
-        targets_lengths_new = []
-        batch_ids_new = []
-
         indices_to_segment = [[0, ] for _ in range(batch_size)]
         num_segments = 0
         for i in range(batch_size):
@@ -60,10 +54,10 @@ class CTCLossSegmented(nn.Module):
                         if start_space != -1 and \
                                 (len(indices_to_segment[i]) == 0 or indices_to_segment[i][-1] != start_space):
                             indices_to_segment[i].append(start_space)
-                            num_segments += 1
+                            num_segments += 2
                         if t > 0:
                             indices_to_segment[i].append(t)
-                            num_segments += 1
+                            num_segments += 2
                     start_space = t
                     all_word_well_recognized = True
             if indices_to_segment[i][-1] != logits_lengths.data[i] - 1:
@@ -80,6 +74,8 @@ class CTCLossSegmented(nn.Module):
             logits_new = logits_new.cuda(logits.get_device())
         targets_new = Variable(torch.LongTensor(num_segments, targets.size()[1]))
         batch_ids_new = []
+        logits_lengths_new = []
+        targets_lengths_new = []
 
         new_i = 0
         for i in range(batch_size):
@@ -110,7 +106,7 @@ class CTCLossSegmented(nn.Module):
                     current_targets = Variable(torch.LongTensor(
                         [c for c, _ in itertools.groupby(targets_aligned[i, start:next].tolist()) if
                          c != self.blank_idx]))
-                    targets_new[new_i, :current_targets.size[0]] = current_targets
+                    targets_new[new_i, :current_targets.size()[0]] = current_targets
                     logits_lengths_new.append(next - start)
                     targets_lengths_new.append(current_targets.size()[0])
                     new_i += 1
