@@ -34,7 +34,7 @@ class CTCLossSegmented(nn.Module):
 
         targets_well_recognized = (targets_aligned == predictions_argmax) * mask
 
-        cnt_well_recognized = targets_well_recognized.float().sum()
+        cnt_well_recognized = targets_well_recognized.data.float().sum()
         if cnt_well_recognized < targets_lengths.float().sum() * batch_size / 2:
             # our model is bad, do not try to segment
             return self.ctc(logits, targets, logits_lengths, targets_lengths)
