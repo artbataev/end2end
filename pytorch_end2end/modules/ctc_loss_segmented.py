@@ -20,7 +20,7 @@ class CTCLossSegmented(nn.Module):
     def forward(self, logits, targets, logits_lengths, targets_lengths):
         logits_logsoftmax = F.log_softmax(logits, dim=2)
         targets_aligned = get_alignment_3d(logits_logsoftmax, targets, logits_lengths, targets_lengths, is_ctc=True)
-        predictions_argmax = torch.max(logits, dim=2)[1].cpu()
+        predictions_argmax = torch.max(logits, dim=2)[1].data.cpu()
 
         batch_size = logits.size()[0]
         sequence_length = logits.size()[1]
