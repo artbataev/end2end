@@ -91,7 +91,7 @@ class CTCLossSegmented(nn.Module):
                 new_i += 1
             else:
                 for k, start in enumerate(indices_to_segment[i][:-1]):
-                    if targets_aligned[i, start] == self.space_idx:
+                    if start != 0:
                         batch_ids_new.append(i)
                         targets_new[new_i, 0] = targets_aligned[i, start]
                         logits_new[new_i, 0:1] = logits[i, start:start + 1]
@@ -100,9 +100,9 @@ class CTCLossSegmented(nn.Module):
                         start += 1
                         new_i += 1
                     next = indices_to_segment[i][k + 1]
-                    if k < len(indices_to_segment[i]) - 2 and targets_aligned[i][next] == self.space_idx:
+                    if k < len(indices_to_segment[i]) - 2:
                         next -= 1
-                    if next <= start:
+                    if next < start:
                         continue
                     batch_ids_new.append(i)
                     logits_new[new_i, :(next-start)] = logits[i, start:next]
