@@ -92,14 +92,14 @@ class CTCLossSegmented(nn.Module):
                         [c for c, _ in itertools.groupby(targets_aligned[i, start:next].tolist()) if
                          c != self.blank_idx]))
                     targets_new.append(current_targets)
-                    logits_lengths_new.append(next - start)
+                    logits_lengths_new.append(next - start + 1)
                     targets_lengths_new.append(current_targets.size()[0])
 
         new_batch_size = len(batch_ids_new)
         max_logits_len = max(logits_lengths_new)
         max_targets_len = max(targets_lengths_new)
 
-        logits_new_var = Variable(torch.FloatTensor(new_batch_size, max_logits_len, logits.size()[2]), requires_grad=True)
+        logits_new_var = Variable(torch.zeros(new_batch_size, max_logits_len, logits.size()[2]), requires_grad=True)
         if logits.is_cuda:
             logits_new_var = logits_new_var.cuda(logits.get_device())
         targets_new_var = Variable(torch.LongTensor(new_batch_size, max_targets_len), requires_grad=False)
@@ -117,6 +117,6 @@ class CTCLossSegmented(nn.Module):
         if logits.is_cuda:
             loss = loss.cuda(logits.get_device())
         loss = Variable(loss, requires_grad=True)
-        for i in batch_ids_new:
-            loss[i] += segmented_loss[i]
+        for new_i, i in enumerate(batch_ids_new):
+            loss[i] += segmented_loss[new_i]
         return loss
