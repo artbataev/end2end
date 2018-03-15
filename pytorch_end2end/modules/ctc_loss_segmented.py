@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 from .warp_ctc_wrapper import WarpCTCLoss
+# from .ctc_loss import CTCLoss as WarpCTCLoss
 from ..utils.alignment import get_alignment_3d
 
 
@@ -51,19 +52,21 @@ class CTCLossSegmented(nn.Module):
 
                 if targets_aligned[i, t] == self.space_idx:
                     if all_word_well_recognized:
-                        if start_space != -1 and \
-                                (len(indices_to_segment[i]) == 0 or indices_to_segment[i][-1] != start_space):
+                        if start_space != -1 and indices_to_segment[i][-1] != start_space:
                             indices_to_segment[i].append(start_space)
                             num_segments += 2
                         if t > 0:
                             indices_to_segment[i].append(t)
-                            num_segments += 2
+                            num_segments += 1
+                            if t - start_space > 1:
+                                num_segments += 1
                     start_space = t
                     all_word_well_recognized = True
             if indices_to_segment[i][-1] != logits_lengths.data[i] - 1:
                 indices_to_segment[i].append(logits_lengths.data[i] - 1)
                 num_segments += 1
 
+        assert num_segments >= batch_size
         if num_segments == batch_size:
             # no new segments found
             loss = self.ctc(logits, targets, logits_lengths, targets_lengths)
@@ -111,6 +114,7 @@ class CTCLossSegmented(nn.Module):
                     targets_lengths_new.append(current_targets.size()[0])
                     new_i += 1
 
+        assert num_segments == len(batch_ids_new)
         logits_lengths_new = Variable(torch.LongTensor(logits_lengths_new), requires_grad=False)
         targets_lengths_new = Variable(torch.LongTensor(targets_lengths_new), requires_grad=False)
 
