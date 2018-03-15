@@ -114,7 +114,8 @@ class CTCLossSegmented(nn.Module):
                     targets_lengths_new.append(current_targets.size()[0])
                     new_i += 1
 
-        assert num_segments == len(batch_ids_new)
+        assert num_segments == len(batch_ids_new), "expected {}, get {} segments: {}".format(num_segments, len(batch_ids_new),
+                                                                                             indices_to_segment)
         logits_lengths_new = Variable(torch.LongTensor(logits_lengths_new), requires_grad=False)
         targets_lengths_new = Variable(torch.LongTensor(targets_lengths_new), requires_grad=False)
 
