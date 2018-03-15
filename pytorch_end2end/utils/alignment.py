@@ -23,6 +23,7 @@ def _get_alignment_asg_1d(logits, targets):
 
     # forward
     alpha = np.zeros((targets_len, prediction_len), dtype=np.float64)
+    alpha[:] = -np.inf
     path_alpha = np.zeros_like(alpha, dtype=np.int64)
     alpha[0, 0] = logits[0, targets[0]]
     for k in range(1, prediction_len):
@@ -58,7 +59,7 @@ def _get_alignment_ctc_1d(logits, targets):
     targets_len = targets.shape[0]
     prediction_len = logits.shape[0]
     extended_targets_len = targets_len * 2 + 1
-    extended_targets = np.ones(extended_targets_len, dtype=int) * blank
+    extended_targets = np.ones(extended_targets_len, dtype=np.int64) * blank
     for i in range(targets_len):
         extended_targets[2 * i + 1] = targets[i]
     best_labeling = np.zeros(prediction_len, dtype=np.int64)
@@ -72,6 +73,7 @@ def _get_alignment_ctc_1d(logits, targets):
 
     # forward
     alpha = np.zeros((extended_targets_len, prediction_len), dtype=np.float64)
+    alpha[:] = -np.inf
     path_alpha = np.zeros_like(alpha, dtype=np.int64)
     alpha[0, 0] = logits[0, extended_targets[0]]
     alpha[1, 0] = logits[0, extended_targets[1]]
