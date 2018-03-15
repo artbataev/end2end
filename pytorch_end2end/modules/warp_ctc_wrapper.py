@@ -23,7 +23,7 @@ class WarpCTCLoss(nn.Module):
         batch_size = targets_lengths.size()[0]
         targets_flat = torch.cat([targets[i, :targets_lengths[i].data[0]] for i in range(batch_size)])
 
-        costs = self.ctc(logits.transpose(0, 1), targets_flat, logits_lengths, targets_lengths)
+        costs = self.ctc(logits.transpose(0, 1), targets_flat.int(), logits_lengths.int(), targets_lengths.int())
 
         if self.reduce:
             return costs.sum()

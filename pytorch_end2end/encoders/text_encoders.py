@@ -165,7 +165,7 @@ class ASGEncoder:
             for i in range(batch_size):
                 results_str.append(self.decode_list_full(decoded_sequences[i, :decoded_lengths[i]]).strip())
 
-        max_length = decoded_lengths.max()
+        max_length = decoded_lengths.max() or 1
         return torch.LongTensor(decoded_sequences[:, :max_length]), torch.LongTensor(decoded_lengths), results_str
 
     def decode_list(self, text_int):
