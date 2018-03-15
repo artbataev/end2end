@@ -105,12 +105,12 @@ class CTCLossSegmented(nn.Module):
                     if next < start:
                         continue
                     batch_ids_new.append(i)
-                    logits_new[new_i, :(next-start)] = logits[i, start:next]
+                    logits_new[new_i, :(next-start + 1)] = logits[i, start:next+1]
                     current_targets = Variable(torch.LongTensor(
-                        [c for c, _ in itertools.groupby(targets_aligned[i, start:next].tolist()) if
+                        [c for c, _ in itertools.groupby(targets_aligned[i, start:next+1].tolist()) if
                          c != self.blank_idx]))
                     targets_new[new_i, :current_targets.size()[0]] = current_targets
-                    logits_lengths_new.append(next - start)
+                    logits_lengths_new.append(next - start + 1)
                     targets_lengths_new.append(current_targets.size()[0])
                     new_i += 1
 
