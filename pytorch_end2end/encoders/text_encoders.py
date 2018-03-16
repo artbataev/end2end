@@ -61,7 +61,7 @@ class CTCEncoder:
             for i in range(batch_size):
                 results_str.append("".join(self._num2char[idx] for idx in decoded_sequences[i, :decoded_lengths[i]]))
 
-        max_length = decoded_lengths.max()
+        max_length = decoded_lengths.max() or 1
         return torch.LongTensor(decoded_sequences[:, :max_length]), torch.LongTensor(decoded_lengths), results_str
 
     def decode_list(self, text_int):
