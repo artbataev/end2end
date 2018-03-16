@@ -12,3 +12,14 @@ def tur_to_lower(text):
         pure_word = "".join([c for c in word if c in TUR_CHARS])
         words_pure.append(pure_word)
     return " ".join(words_pure)
+
+
+def base_to_lower(text, chars):
+    words = text.split()
+    words_pure = []
+    for word in words:
+        if word.casefold() in ["<spoken_noise>", "<silence>"]:
+            continue
+        pure_word = "".join([c for c in word if c in chars])
+        words_pure.append(pure_word)
+    return " ".join(words_pure)
