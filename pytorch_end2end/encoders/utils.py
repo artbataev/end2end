@@ -20,6 +20,6 @@ def base_to_lower(text, chars):
     for word in words:
         if word.casefold() in ["<spoken_noise>", "<silence>"]:
             continue
-        pure_word = "".join([c for c in word if c in chars])
+        pure_word = "".join([c for c in word.casefold() if c in chars])
         words_pure.append(pure_word)
     return " ".join(words_pure)
