@@ -11,12 +11,13 @@ from ..utils.alignment import get_alignment_3d
 
 
 class CTCLossSegmented(nn.Module):
-    def __init__(self, space_idx, blank_idx=0, reduce=False):
+    def __init__(self, space_idx, blank_idx=0, reduce=False, min_word_length=3):
         super().__init__()
         self.reduce = reduce
         self.space_idx = space_idx
         self.blank_idx = blank_idx
         self.ctc = WarpCTCLoss(reduce=False)
+        self.min_word_length = min_word_length
 
     def forward(self, logits, targets, logits_lengths, targets_lengths):
         logits_logsoftmax = F.log_softmax(logits, dim=2)
@@ -45,13 +46,17 @@ class CTCLossSegmented(nn.Module):
         for i in range(batch_size):
             start_space = -1
             all_word_well_recognized = True
+            current_word_length=0
+            last_word_char = -1
+            last_word_char_is_blank = False
             for t in range(logits_lengths.data[i]):
                 if targets_well_recognized[i, t] == 0:
                     all_word_well_recognized = False
                     continue
 
                 if targets_aligned[i, t] == self.space_idx:
-                    if all_word_well_recognized:
+                    # create segment if found
+                    if all_word_well_recognized and current_word_length >= self.min_word_length:
                         if start_space != -1 and indices_to_segment[i][-1] != start_space:
                             indices_to_segment[i].append(start_space)
                             num_segments += 2
@@ -62,6 +67,17 @@ class CTCLossSegmented(nn.Module):
                                 num_segments += 1
                     start_space = t
                     all_word_well_recognized = True
+                    current_word_length = 0
+                    last_word_char = -1
+                    last_word_char_is_blank = False
+                elif targets_aligned[i, t] == self.blank_idx:
+                    last_word_char_is_blank = True
+                else: # not blank
+                    if last_word_char_is_blank or targets_aligned[i, t] != last_word_char:
+                        current_word_length += 1
+                    last_word_char = targets_aligned[i, t]
+                    last_word_char_is_blank = False
+
             if indices_to_segment[i][-1] != logits_lengths.data[i] - 1:
                 indices_to_segment[i].append(logits_lengths.data[i] - 1)
                 num_segments += 1
