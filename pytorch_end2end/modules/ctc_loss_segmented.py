@@ -58,8 +58,10 @@ class CTCLossSegmented(nn.Module):
                     # create segment if found
                     if all_word_well_recognized and current_word_length >= self.min_word_length:
                         if start_space != -1 and indices_to_segment[i][-1] != start_space:
+                            if start_space - indices_to_segment[i][-1] > 1:
+                                num_segments += 1
                             indices_to_segment[i].append(start_space)
-                            num_segments += 2
+                            num_segments += 1
                         if t > 0:
                             indices_to_segment[i].append(t)
                             num_segments += 1
