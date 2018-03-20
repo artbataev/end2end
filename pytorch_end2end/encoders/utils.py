@@ -21,5 +21,6 @@ def base_to_lower(text, chars):
         if word.casefold() in ["<spoken_noise>", "<silence>"]:
             continue
         pure_word = "".join([c for c in word.casefold() if c in chars])
-        words_pure.append(pure_word)
+        if pure_word and not pure_word.isspace():
+            words_pure.append(pure_word)
     return " ".join(words_pure)
