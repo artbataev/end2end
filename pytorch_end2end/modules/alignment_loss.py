@@ -34,6 +34,6 @@ class AlignedTargetsLoss(nn.Module):
         else:
             loss = F.nll_loss(logits_logsoftmax.view(batch_size * sequence_length, -1),
                           Variable(targets_new).view(batch_size * sequence_length), reduce=False).view(batch_size, sequence_length)
-            if self.reduce_by_sequence:
+            if self._reduce_by_sequence:
                 loss = loss.sum(dim=-1) / logits_lengths.float()
         return loss
