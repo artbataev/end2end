@@ -15,26 +15,22 @@ class AlignedTargetsLoss(nn.Module):
     def forward(self, logits, targets, logits_lengths, targets_lengths):
         """
         :param logits: batch_size * sequence_length * num_labels
-        :param targets: batch_size * sequence_length
+        :param targets: batch_size * sequence_length, fill with -1 if ignored label
         :param logits_lengths: batch_size
         :param labels_lengths: batch_size
         :return:
         """
-        logits_logsoftmax = nn.LogSoftmax(dim=2)(logits)
+        logits_logsoftmax = nn.LogSoftmax(dim=-1)(logits)
         targets_new = get_alignment_3d(logits_logsoftmax, targets, logits_lengths, targets_lengths,
                                        is_ctc=self._is_ctc)
         if logits_logsoftmax.is_cuda:
             targets_new = targets_new.cuda(logits_logsoftmax.get_device())
+        batch_size, sequence_length, _ = logits.size()
 
-        loss = F.nll_loss(logits_logsoftmax, Variable(targets_new), reduce=False)
-
-        batch_size = logits_logsoftmax.size()[0]
-        sequence_length = logits_logsoftmax.size()[1]
-        mask = torch.ByteTensor(batch_size, sequence_length).ones_()
-        for i in range(batch_size):
-            mask[i, logits_lengths[i]:] = 0
         if self._reduce:
-            loss = torch.masked_select(loss, mask).mean()
+            loss = F.nll_loss(logits_logsoftmax.view(batch_size * sequence_length, -1),
+                          Variable(targets_new).view(batch_size * sequence_length), reduce=True)
         else:
-            loss *= mask.float()
+            loss = F.nll_loss(logits_logsoftmax.view(batch_size * sequence_length, -1),
+                          Variable(targets_new).view(batch_size * sequence_length), reduce=False).view(batch_size, sequence_length)
         return loss
