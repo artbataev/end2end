@@ -22,7 +22,7 @@ class AlignedTargetsLoss(nn.Module):
         :return:
         """
         logits_logsoftmax = nn.LogSoftmax(dim=-1)(logits)
-        cur_device = logits_lengths.get_device()
+        cur_device = logits_logsoftmax.get_device()
         targets_new = get_alignment_3d(logits_logsoftmax, targets, logits_lengths, targets_lengths,
                                        is_ctc=self._is_ctc)
         if logits_logsoftmax.is_cuda:
