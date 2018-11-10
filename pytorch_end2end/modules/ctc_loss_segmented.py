@@ -5,8 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from .warp_ctc_wrapper import WarpCTCLoss
-# from .ctc_loss import CTCLoss as WarpCTCLoss
+from .ctc_loss import CTCLoss as WarpCTCLoss
 from ..utils.alignment import get_alignment_3d
 
 
