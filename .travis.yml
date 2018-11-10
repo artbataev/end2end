@@ -6,7 +6,7 @@ sudo: false
 cache: pip
 
 install:
-- pip install -r requirements.txt"
+- pip install -r requirements.txt
 - pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
 - pip install -r docs/requirements.txt
 
