@@ -8,98 +8,120 @@ test with
 import unittest
 
 import torch
-from torch.autograd import Variable
-
-from pytorch_end2end.modules.ctc_loss import CTCLoss
-
-places = 5
-DELIMITER = "=" * 50 + "\n"
+import torch.nn.functional as F
+from pytorch_end2end import CTCLoss
 
 
-def run_grads(label_sizes, labels, probs, sizes, after_softmax=False, blank_idx=0, check_baidu_grads=False):
-    ctc_loss = CTCLoss(reduce=True, after_softmax=after_softmax, blank_idx=blank_idx)
-    probs = Variable(probs, requires_grad=True)
-    cost = ctc_loss(probs, labels, sizes, label_sizes)
-    cost.backward()
-    cpu_cost = cost.data[0]
-    if torch.cuda.is_available():
-        probs = Variable(probs.data.cuda(), requires_grad=True)
-        cost = ctc_loss(probs, labels, sizes, label_sizes)
+class TestCTCLoss(unittest.TestCase):
+    places = 5
+
+    @staticmethod
+    def run_grads(probs, targets, input_lengths, target_lengths,
+                  after_logsoftmax=True, blank_idx=0,
+                  print_compare_grads=False):
+        """
+
+        :param probs: batch_size * sequence_length * alphabet_dim
+        :param targets: batch_size * sequence_length
+        :param input_lengths:
+        :param target_lengths:
+        :param after_logsoftmax:
+        :param blank_idx:
+        :return:
+        """
+        probs = probs.permute(1, 0, 2)  # sequence_length * batch_size * alphabet_dim: make time major
+        if not after_logsoftmax:
+            log_probs = F.log_softmax(probs, dim=-1)
+        else:
+            log_probs = probs
+        ctc_loss = CTCLoss(reduce=True, size_average=False, after_logsoftmax=True, blank_idx=blank_idx)
+        log_probs = torch.Tensor(log_probs).requires_grad_()
+        cost = ctc_loss(log_probs, targets, input_lengths, target_lengths)
         cost.backward()
-        gpu_cost = cost.data[0]
-    else:
-        gpu_cost = cpu_cost
-    grads = probs.grad
+        cpu_cost = cost.item()
+        if torch.cuda.is_available():
+            log_probs = torch.Tensor(log_probs).cuda().requires_grad_()
+            cost = ctc_loss(log_probs, targets, input_lengths, target_lengths)
+            cost.backward()
+            gpu_cost = cost.item()
+        else:
+            gpu_cost = cpu_cost
+        grads = log_probs.grad
 
-    if check_baidu_grads and blank_idx == 0:
-        from pytorch_end2end.modules.warp_ctc_wrapper import WarpCTCLoss as CTCLoss_Baidu
-        probs = Variable(probs.data, requires_grad=True)
-        cost = CTCLoss_Baidu(reduce=True)(probs, labels, sizes, label_sizes)
-        cost.backward()
-        grads_baidu = probs.grad
-        print(DELIMITER * 3 + "GRADS BAIDU\n {}".format(grads_baidu) + DELIMITER + "Your GRADS \n {}".format(
-            grads) + DELIMITER * 3)
+        if print_compare_grads:
+            from torch.nn import CTCLoss as CTCLossNative
+            ctc_loss_native = CTCLossNative(blank=blank_idx, reduction="sum")
+            log_probs_2 = torch.Tensor(log_probs.detach()).requires_grad_()
+            cost_native = ctc_loss_native(log_probs_2, targets, input_lengths, target_lengths)
+            cost_native.backward()
+            grads_native = log_probs_2.grad
+            print("=" * 70)
+            print("GRADS Native\n {}".format(grads_native))
+            print("=" * 30)
+            print("Your GRADS \n {}".format(grads))
+            print("=" * 70)
+        return cpu_cost, gpu_cost
 
-    print(grads.view(grads.size(0) * grads.size(1), grads.size(2)))
-    return cpu_cost, gpu_cost
-
-
-class TestCases(unittest.TestCase):
+    # @unittest.skip("")
     def test_simple(self):
         probs = torch.FloatTensor([[[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.1, 0.6, 0.1, 0.1]]]).contiguous()
-        labels = Variable(torch.IntTensor([[1, 2]]))
-        label_sizes = Variable(torch.IntTensor([2]))
-        sizes = Variable(torch.IntTensor([2]))
-        cpu_cost, gpu_cost = run_grads(label_sizes, labels, probs, sizes, check_baidu_grads=True)
+        targets = torch.IntTensor([[1, 2]])
+        target_lengths = torch.IntTensor([2])
+        input_lengths = torch.IntTensor([2])
+        cpu_cost, gpu_cost = self.run_grads(probs, targets, input_lengths, target_lengths, after_logsoftmax=False)
         expected_cost = 2.4628584384918
-        self.assertEqual(cpu_cost, gpu_cost)
-        self.assertAlmostEqual(cpu_cost, expected_cost, places)
+        self.assertAlmostEqual(cpu_cost, gpu_cost, self.places)
+        self.assertAlmostEqual(cpu_cost, expected_cost, self.places)
 
+    # @unittest.skip("")
     def test_medium(self):
         probs = torch.FloatTensor([
             [[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.1, 0.6, 0.1, 0.1]],
             [[0.6, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.5, 0.2, 0.1]]
         ]).transpose(0, 1).contiguous()
 
-        labels = Variable(torch.IntTensor([[1, 2],
-                                           [1, 2]]))
-        label_sizes = Variable(torch.IntTensor([2, 2]))
-        sizes = Variable(torch.IntTensor([2, 2]))
-        cpu_cost, gpu_cost = run_grads(label_sizes, labels, probs, sizes, check_baidu_grads=True)
+        targets = torch.IntTensor([[1, 2],
+                                   [1, 2]])
+        target_lengths = torch.IntTensor([2, 2])
+        input_lengths = torch.IntTensor([2, 2])
+        cpu_cost, gpu_cost = self.run_grads(probs, targets, input_lengths, target_lengths, after_logsoftmax=False)
         expected_cost = 6.0165174007416
-        self.assertEqual(cpu_cost, gpu_cost)
-        self.assertAlmostEqual(cpu_cost, expected_cost, places)
+        self.assertAlmostEqual(cpu_cost, gpu_cost, self.places)
+        self.assertAlmostEqual(cpu_cost, expected_cost, self.places)
 
     # def test_medium_stability(self):
+    #     strange test from https://github.com/baidu-research/warp-ctc: maybe incorrect
     #     multiplier = 200
     #     probs = torch.FloatTensor([
     #         [[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.1, 0.6, 0.1, 0.1]],
     #         [[0.6, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.5, 0.2, 0.1]]
     #     ]).transpose(0, 1).contiguous() * multiplier
     #
-    #     labels = Variable(torch.IntTensor([[1, 2], [1, 2]]))
-    #     label_sizes = Variable(torch.IntTensor([2, 2]))
-    #     sizes = Variable(torch.IntTensor([2, 2]))
-    #     cpu_cost, gpu_cost = run_grads(label_sizes, labels, probs, sizes, check_baidu_grads=True)
+    #     targets = torch.IntTensor([[1, 2], [1, 2]])
+    #     target_lengths = torch.IntTensor([2, 2])
+    #     input_lengths = torch.IntTensor([2, 2])
+    #     cpu_cost, gpu_cost = run_grads(probs, targets, input_lengths, target_lengths, after_logsoftmax=False)
     #     expected_cost = 199.96618652344
-    #     self.assertEqual(cpu_cost, gpu_cost)
-    #     self.assertAlmostEqual(cpu_cost, expected_cost, places)
+    #     self.assertAlmostEqual(cpu_cost, gpu_cost, self.places)
+    #     self.assertAlmostEqual(cpu_cost, expected_cost, self.places)
 
+    # @unittest.skip("")
     def test_empty_label(self):
         probs = torch.FloatTensor([
             [[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.1, 0.6, 0.1, 0.1]],
             [[0.6, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.5, 0.2, 0.1]]
         ]).transpose(0, 1).contiguous()
 
-        labels = Variable(torch.IntTensor([[1, 2], [0, 0]]))
-        label_sizes = Variable(torch.IntTensor([2, 0]))
-        sizes = Variable(torch.IntTensor([2, 2]))
-        cpu_cost, gpu_cost = run_grads(label_sizes, labels, probs, sizes)
+        targets = torch.IntTensor([[1, 2], [0, 0]])
+        target_lengths = torch.IntTensor([2, 0])
+        input_lengths = torch.IntTensor([2, 2])
+        cpu_cost, gpu_cost = self.run_grads(probs, targets, input_lengths, target_lengths, after_logsoftmax=False)
         expected_cost = 6.416517496109
-        self.assertEqual(cpu_cost, gpu_cost)
-        self.assertAlmostEqual(cpu_cost, expected_cost, places)
+        self.assertAlmostEqual(cpu_cost, gpu_cost, self.places)
+        self.assertAlmostEqual(cpu_cost, expected_cost, self.places)
 
     # # TODO: add tests from https://github.com/tensorflow/tensorflow/blob/4ac1956698e0e02f3051da65cdf453601555ed4a/tensorflow/python/kernel_tests/ctc_loss_op_test.py
+    # @unittest.skip("")
     def test_tf_1(self):
         # blank in tensorflow - last! here - first!
         probs = torch.FloatTensor([
@@ -110,14 +132,16 @@ class TestCases(unittest.TestCase):
              [0.00623107, 0.458235, 0.396634, 0.123377, 0.00648837, 0.00903441]]
         ]).contiguous()
 
-        labels = Variable(torch.IntTensor([[1, 2, 3, 2, 1]]))
-        label_sizes = Variable(torch.IntTensor([5]))
-        sizes = Variable(torch.IntTensor([5]))
-        cpu_cost, gpu_cost = run_grads(label_sizes, labels, probs, sizes, after_softmax=True)
+        targets = torch.IntTensor([[1, 2, 3, 2, 1]])
+        target_lengths = torch.IntTensor([5])
+        input_lengths = torch.IntTensor([5])
+        cpu_cost, gpu_cost = self.run_grads(torch.log(probs), targets, input_lengths, target_lengths,
+                                            after_logsoftmax=True, blank_idx=5)
         expected_cost = 3.34211
-        self.assertAlmostEqual(cpu_cost, gpu_cost, 5)
-        self.assertAlmostEqual(cpu_cost, expected_cost, places)
+        self.assertAlmostEqual(cpu_cost, gpu_cost, self.places)
+        self.assertAlmostEqual(cpu_cost, expected_cost, self.places)
 
+    # @unittest.skip("")
     def test_tf_2(self):
         # blank in tensorflow - last! here - first!
 
@@ -129,13 +153,14 @@ class TestCases(unittest.TestCase):
              [0.423286, 0.315517, 0.0338439, 0.0393744, 0.0339315, 0.154046]]
         ]).contiguous()
 
-        labels = Variable(torch.IntTensor([[0, 1, 1, 0]]))
-        label_sizes = Variable(torch.IntTensor([4]))
-        sizes = Variable(torch.IntTensor([5]))
-        cpu_cost, gpu_cost = run_grads(label_sizes, labels, probs, sizes, after_softmax=True, blank_idx=5)
+        targets = torch.IntTensor([[0, 1, 1, 0]])
+        target_lengths = torch.IntTensor([4])
+        input_lengths = torch.IntTensor([5])
+        cpu_cost, gpu_cost = self.run_grads(torch.log(probs), targets, input_lengths, target_lengths,
+                                            after_logsoftmax=True, blank_idx=5)
         expected_cost = 5.42262
-        self.assertAlmostEqual(cpu_cost, gpu_cost, 5)
-        self.assertAlmostEqual(cpu_cost, expected_cost, places)
+        self.assertAlmostEqual(cpu_cost, gpu_cost, self.places)
+        self.assertAlmostEqual(cpu_cost, expected_cost, self.places)
 
 
 if __name__ == '__main__':

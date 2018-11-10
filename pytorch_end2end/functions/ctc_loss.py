@@ -121,7 +121,7 @@ class CTCLossFunction(Function):
     @staticmethod
     def forward(ctx, logits, targets, logits_lengths, targets_lengths, blank_idx=0):
         # inputs: expected shape of seqLength x batchSize x alphabet_size, after logsoftmax!
-        loss, grads = _ctc_3d_loss(logits.cpu().numpy(), targets.cpu().numpy(),
+        loss, grads = _ctc_3d_loss(logits.detach().cpu().numpy(), targets.cpu().numpy(),
                                    logits_lengths.cpu().numpy(), targets_lengths.cpu().numpy(), blank_idx)
         ctx.grads = torch.FloatTensor(grads)  # save for backward not works!
         if logits.is_cuda:
