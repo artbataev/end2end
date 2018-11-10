@@ -1,5 +1,10 @@
 # Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with Pytorch
 
+[ ![Build](https://travis-ci.com/artbataev/end2end.svg?branch=master) ](https://travis-ci.com/artbataev/end2end)
+
+**[ Documentation ](https://artbataev.github.io/end2end/)**
+
+
 ## Losses
 - [x] Connectionist temporal classification (CTC) (python / numba)
 - [ ] CTC (C++, CPU)
