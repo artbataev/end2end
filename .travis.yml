@@ -5,14 +5,17 @@ python:
 sudo: false
 cache: pip
 
-install: "pip install -r docs/requirements.txt"
+install:
+- pip install -r requirements.txt"
+- pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+- pip install -r docs/requirements.txt
 
-before_script:
-  - cd "${TRAVIS_BUILD_DIR}/docs"
 script:
+  - cd "${TRAVIS_BUILD_DIR}/docs"
   - make html
-after_script:
   - cd "${TRAVIS_BUILD_DIR}"
+  - python -m tests.test_ctc
+  - python -m tests.test_ctc_decoder
 
 deploy:
   - provider: pages
