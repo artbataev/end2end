@@ -5,7 +5,9 @@ python:
 sudo: false
 cache: pip
 
-install: "pip install -r requirements.txt"
+install:
+    "pip install -r requirements.txt"
+    "pip install -r docs/requirements.txt"
 
 before_script:
   - cd "${TRAVIS_BUILD_DIR}/docs"
