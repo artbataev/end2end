@@ -12,6 +12,7 @@ addons:
     packages:
     - g++-8
     - cmake
+    - ninja-build
 
 install:
 - pip install -r requirements.txt
