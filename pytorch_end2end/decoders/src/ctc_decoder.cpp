@@ -1,6 +1,5 @@
-#include <torch/extension.h>
-
 #include <vector>
+#include <torch/extension.h>
 
 std::vector<at::Tensor> decode_greedy(at::Tensor logits, at::Tensor logits_lengths, int blank_idx) {
     // collapse repeated, remove blank
@@ -27,6 +26,6 @@ std::vector<at::Tensor> decode_greedy(at::Tensor logits, at::Tensor logits_lengt
             decoded_targets_lengths};
 }
 
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+PYBIND11_MODULE(cpp_ctc_decoder, m) {
     m.def("decode_greedy", &decode_greedy, "Decode greedy");
 }

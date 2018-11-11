@@ -9,16 +9,13 @@ endif ()
 project(pytorch_end2end VERSION ${PROJECT_VERSION} LANGUAGES CXX)
 
 find_package(Torch REQUIRED)
-#add_subdirectory(third_party/pybind11)
+add_subdirectory(third_party/pybind11)
 
 set(CMAKE_CXX_STANDARD 11)
-#pybind11_add_module(cpp_ctc_decoder pytorch_end2end/decoders/src/ctc_decoder.cpp)
-
-
 
 add_library(cpp_ctc_decoder MODULE pytorch_end2end/decoders/src/ctc_decoder.cpp)
 target_link_libraries(cpp_ctc_decoder
-#        PRIVATE pybind11::module
+        PRIVATE pybind11::module
         ${TORCH_LIBRARIES}
         )
 

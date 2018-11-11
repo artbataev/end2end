@@ -1,6 +1,6 @@
 language: python
 python:
-- "3.5"
+- "3.6"
 
 sudo: false
 cache: pip
@@ -25,6 +25,10 @@ before_script:
 script:
   - cd "${TRAVIS_BUILD_DIR}/docs"
   - make html
+  - cd "${TRAVIS_BUILD_DIR}"
+  - mkdir build && cd build
+  - cmake -DCMAKE_PREFIX_PATH=$(python -c "import torch, os; print(os.path.dirname(torch.__file__))") -DPYBIND11_PYTHON_VERSION=3.6 ..
+  - cmake --build .
   - cd "${TRAVIS_BUILD_DIR}"
   - python -m tests.test_ctc
   - python -m tests.test_ctc_decoder

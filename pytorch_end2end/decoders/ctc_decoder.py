@@ -1,11 +1,19 @@
 import os
 
 import torch
-from torch.utils.cpp_extension import load
 
-cpp_ctc_decoder = load(name="cpp_ctc_decoder",
-                       sources=[os.path.join(os.path.dirname(__file__), "src", "ctc_decoder.cpp"), ],
-                       verbose=True)
+import sys
+
+module_base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+build_path = os.path.join(module_base, "cmake-build-debug")
+build_path2 = os.path.join(module_base, "build")
+if os.path.exists(build_path2):
+    sys.path.append(build_path2)
+else:
+    sys.path.append(build_path)
+
+import cpp_ctc_decoder
 
 
 class CTCDecoderError(Exception):
