@@ -5,6 +5,14 @@ python:
 sudo: false
 cache: pip
 
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - g++-8
+    - cmake
+
 install:
 - pip install -r requirements.txt
 - pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
