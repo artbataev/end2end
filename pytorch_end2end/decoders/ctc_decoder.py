@@ -1,6 +1,11 @@
 import os
 
 import torch
+from torch.utils.cpp_extension import load
+
+cpp_ctc_decoder = load(name="cpp_ctc_decoder",
+                       sources=[os.path.join(os.path.dirname(__file__), "src", "ctc_decoder.cpp"), ],
+                       verbose=True)
 
 
 class CTCDecoderError(Exception):
@@ -61,24 +66,14 @@ class CTCBeamSearchDecoder:
         else:
             logits_lengths = logits_lengths.cpu()
 
-        argmax_logits = torch.argmax(logits, dim=-1)
-        decoded_targets = torch.zeros_like(argmax_logits)
-        decoded_targets_lengths = torch.zeros_like(logits_lengths)
         decoded_sentences = []
+        decoded_targets, decoded_targets_lengths = cpp_ctc_decoder.decode_greedy(
+            logits, logits_lengths, self._blank_idx)
 
-        for i in range(batch_size):
-            prev_symbol = self._blank_idx
-            current_len = 0
-            decoded_sentences.append("")
-            for j in range(logits_lengths[i]):
-                current_symbol = argmax_logits[i, j]
-                if current_symbol != self._blank_idx:
-                    if prev_symbol != current_symbol:
-                        decoded_targets[i, current_len] = current_symbol
-                        current_len += 1
-                        if self._labels is not None:
-                            decoded_sentences[i] += self._labels[current_symbol]
-                prev_symbol = current_symbol
-            decoded_targets_lengths[i] = current_len
+        if self._labels:
+            for i in range(batch_size):
+                decoded_sentences.append("")
+                for j in range(decoded_targets_lengths[i]):
+                    decoded_sentences[i] += self._labels[decoded_targets[i][j]]
 
         return decoded_targets, decoded_targets_lengths, decoded_sentences
