@@ -76,7 +76,9 @@ class CTCBeamSearchDecoder:
 
         decoded_sentences = []
         decoded_targets, decoded_targets_lengths = cpp_ctc_decoder.decode_greedy(
-            logits, logits_lengths, self._blank_idx)
+            logits=logits,
+            logits_lengths=logits_lengths,
+            blank_idx=self._blank_idx)
 
         if self._labels:
             for i in range(batch_size):
