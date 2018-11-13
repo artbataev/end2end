@@ -34,7 +34,7 @@ class CTCBeamSearchDecoder:
         """
         self._beam_width = beam_width
         self._blank_idx = blank_idx
-        self._labels = labels
+        self._labels = labels or []
         self._lm_path = os.path.abspath(lm_path) if lm_path is not None else None
         self._alpha = alpha
         self._beta = beta
@@ -74,16 +74,10 @@ class CTCBeamSearchDecoder:
         else:
             logits_lengths = logits_lengths.cpu()
 
-        decoded_sentences = []
-        decoded_targets, decoded_targets_lengths = cpp_ctc_decoder.decode_greedy(
+        decoded_targets, decoded_targets_lengths, decoded_sentences = cpp_ctc_decoder.decode_greedy(
             logits=logits,
             logits_lengths=logits_lengths,
-            blank_idx=self._blank_idx)
-
-        if self._labels:
-            for i in range(batch_size):
-                decoded_sentences.append("")
-                for j in range(decoded_targets_lengths[i]):
-                    decoded_sentences[i] += self._labels[decoded_targets[i][j]]
+            blank_idx=self._blank_idx,
+            labels=self._labels)
 
         return decoded_targets, decoded_targets_lengths, decoded_sentences
