@@ -23,15 +23,14 @@ before_script:
 - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 90
 
 script:
-  - cd "${TRAVIS_BUILD_DIR}/docs"
-  - make html
-  - cd "${TRAVIS_BUILD_DIR}"
   - mkdir build && cd build
   - cmake -DCMAKE_PREFIX_PATH=$(python -c "import torch, os; print(os.path.dirname(torch.__file__))") -DPYBIND11_PYTHON_VERSION=3.6 ..
   - cmake --build .
   - cd "${TRAVIS_BUILD_DIR}"
   - python -m tests.test_ctc
   - python -m tests.test_ctc_decoder
+  - cd "${TRAVIS_BUILD_DIR}/docs"
+  - make html
 
 deploy:
   - provider: pages
