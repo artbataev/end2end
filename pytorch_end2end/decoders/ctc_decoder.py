@@ -23,7 +23,7 @@ class CTCDecoderError(Exception):
 class CTCBeamSearchDecoder:
     def __init__(self, beam_width=100, blank_idx=0, time_major=True, labels=None, lm_path=None, alpha=0.0, beta=0.0):
         """
-
+        Decoder class
         :param beam_width:
         :param blank_idx:
         :param time_major:
@@ -51,18 +51,22 @@ class CTCBeamSearchDecoder:
                 raise CTCDecoderError("Can't find a model: {}".format(self._lm_path))
 
     def decode(self, logits, logits_lengths=None):
+        """
+        Perform decoding
+        :param logits:
+        :param logits_lengths:
+        :return: (decoded_targets, decoded_targets_lengths, decoded_sentences)
+        """
         if self._beam_width == 1:
             return self.decode_greedy(logits, logits_lengths)
         raise NotImplementedError("Beam search is not implemented")
 
     def decode_greedy(self, logits, logits_lengths=None):
         """
-
+        Perform greedy (argmax) decoding
         :param logits:
         :param logits_lengths:
-        :return: decoded_targets
-                 decoded_targets_lengths
-                 decoded_sentences
+        :return: (decoded_targets, decoded_targets_lengths, decoded_sentences)
         """
         if self._time_major:
             logits = logits.transpose(1, 0)  # batch_size * sequence_length * alphabet_size
