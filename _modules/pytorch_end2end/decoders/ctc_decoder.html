@@ -168,7 +168,9 @@
 
 
 <div class="viewcode-block" id="CTCBeamSearchDecoder"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCBeamSearchDecoder">[docs]</a><span class="k">class</span> <span class="nc">CTCBeamSearchDecoder</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam_width</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lm_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam_width</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">lm_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                 <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Decoder class</span>
 <span class="sd">        :param beam_width:</span>
@@ -178,6 +180,7 @@
 <span class="sd">        :param lm_path:</span>
 <span class="sd">        :param alpha:</span>
 <span class="sd">        :param beta:</span>
+<span class="sd">        :param case_sensitive:</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_beam_width</span> <span class="o">=</span> <span class="n">beam_width</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span> <span class="o">=</span> <span class="n">blank_idx</span>
@@ -186,10 +189,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">=</span> <span class="n">alpha</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_beta</span> <span class="o">=</span> <span class="n">beta</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_time_major</span> <span class="o">=</span> <span class="n">time_major</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_case_sensitive</span> <span class="o">=</span> <span class="n">case_sensitive</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_params</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span> <span class="o">=</span> <span class="n">cpp_ctc_decoder</span><span class="o">.</span><span class="n">CTCDecoder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lm_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span> <span class="o">=</span> <span class="n">cpp_ctc_decoder</span><span class="o">.</span><span class="n">CTCDecoder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lm_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_case_sensitive</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_check_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># TODO: Check all params</span>
