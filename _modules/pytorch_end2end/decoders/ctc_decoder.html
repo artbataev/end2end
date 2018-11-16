@@ -182,16 +182,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_beam_width</span> <span class="o">=</span> <span class="n">beam_width</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span> <span class="o">=</span> <span class="n">blank_idx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span> <span class="o">=</span> <span class="n">labels</span> <span class="ow">or</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_lm_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">lm_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">lm_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lm_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">lm_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">lm_path</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">=</span> <span class="n">alpha</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_beta</span> <span class="o">=</span> <span class="n">beta</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_time_major</span> <span class="o">=</span> <span class="n">time_major</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_params</span><span class="p">()</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span> <span class="o">=</span> <span class="n">cpp_ctc_decoder</span><span class="o">.</span><span class="n">CTCDecoder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lm_path</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">_check_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># TODO: Check all params</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lm_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lm_path</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">CTCDecoderError</span><span class="p">(</span><span class="s2">&quot;To decode with language model you should pass labels&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lm_path</span><span class="p">):</span>
@@ -207,6 +209,9 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beam_width</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode_greedy</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="p">)</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Beam search is not implemented&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CTCBeamSearchDecoder.print_scores_for_sentence"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCBeamSearchDecoder.print_scores_for_sentence">[docs]</a>    <span class="k">def</span> <span class="nf">print_scores_for_sentence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">words</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span><span class="o">.</span><span class="n">print_scores_for_sentence</span><span class="p">(</span><span class="n">words</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CTCBeamSearchDecoder.decode_greedy"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCBeamSearchDecoder.decode_greedy">[docs]</a>    <span class="k">def</span> <span class="nf">decode_greedy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -225,11 +230,9 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logits_lengths</span> <span class="o">=</span> <span class="n">logits_lengths</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
 
-        <span class="n">decoded_targets</span><span class="p">,</span> <span class="n">decoded_targets_lengths</span><span class="p">,</span> <span class="n">decoded_sentences</span> <span class="o">=</span> <span class="n">cpp_ctc_decoder</span><span class="o">.</span><span class="n">decode_greedy</span><span class="p">(</span>
+        <span class="n">decoded_targets</span><span class="p">,</span> <span class="n">decoded_targets_lengths</span><span class="p">,</span> <span class="n">decoded_sentences</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span><span class="o">.</span><span class="n">decode_greedy</span><span class="p">(</span>
             <span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="p">,</span>
-            <span class="n">logits_lengths</span><span class="o">=</span><span class="n">logits_lengths</span><span class="p">,</span>
-            <span class="n">blank_idx</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span><span class="p">,</span>
-            <span class="n">labels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="p">)</span>
+            <span class="n">logits_lengths</span><span class="o">=</span><span class="n">logits_lengths</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">decoded_targets</span><span class="p">,</span> <span class="n">decoded_targets_lengths</span><span class="p">,</span> <span class="n">decoded_sentences</span></div></div>
 </pre></div>
