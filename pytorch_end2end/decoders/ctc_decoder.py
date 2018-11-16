@@ -35,16 +35,18 @@ class CTCBeamSearchDecoder:
         self._beam_width = beam_width
         self._blank_idx = blank_idx
         self._labels = labels or []
-        self._lm_path = os.path.abspath(lm_path) if lm_path is not None else None
+        self._lm_path = os.path.abspath(lm_path) if lm_path else ""
         self._alpha = alpha
         self._beta = beta
         self._time_major = time_major
 
         self._check_params()
 
+        self._decoder = cpp_ctc_decoder.CTCDecoder(self._blank_idx, self._labels, self._lm_path)
+
     def _check_params(self):
         # TODO: Check all params
-        if self._lm_path is not None:
+        if self._lm_path:
             if self._labels is None:
                 raise CTCDecoderError("To decode with language model you should pass labels")
             if not os.path.isfile(self._lm_path):
@@ -60,6 +62,9 @@ class CTCBeamSearchDecoder:
         if self._beam_width == 1:
             return self.decode_greedy(logits, logits_lengths)
         raise NotImplementedError("Beam search is not implemented")
+
+    def print_scores_for_sentence(self, words):
+        self._decoder.print_scores_for_sentence(words)
 
     def decode_greedy(self, logits, logits_lengths=None):
         """
@@ -78,10 +83,8 @@ class CTCBeamSearchDecoder:
         else:
             logits_lengths = logits_lengths.cpu()
 
-        decoded_targets, decoded_targets_lengths, decoded_sentences = cpp_ctc_decoder.decode_greedy(
+        decoded_targets, decoded_targets_lengths, decoded_sentences = self._decoder.decode_greedy(
             logits=logits,
-            logits_lengths=logits_lengths,
-            blank_idx=self._blank_idx,
-            labels=self._labels)
+            logits_lengths=logits_lengths)
 
         return decoded_targets, decoded_targets_lengths, decoded_sentences

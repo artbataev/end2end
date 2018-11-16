@@ -13,10 +13,21 @@ add_subdirectory(third_party/pybind11)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_library(cpp_ctc_decoder MODULE pytorch_end2end/decoders/src/ctc_decoder.cpp)
+
+# kenlm
+add_subdirectory(third_party/kenlm)
+include_directories(third_party/kenlm)
+
+
+add_library(cpp_ctc_decoder MODULE pytorch_end2end/src/ctc_decoder.cpp
+        pytorch_end2end/src/ctc_decoder.h
+        pytorch_end2end/src/ctc_loss.cpp)
+
+
 target_link_libraries(cpp_ctc_decoder
         PRIVATE pybind11::module
         ${TORCH_LIBRARIES}
+        PRIVATE kenlm
         )
 
 set_property(TARGET cpp_ctc_decoder PROPERTY CXX_STANDARD 11)
