@@ -11,8 +11,9 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - g++-8
+    - gcc-8
     - cmake
-    - libboost-dev
+    - libboost-all-dev
 
 install:
 - pip install -r requirements.txt
@@ -21,6 +22,7 @@ install:
 
 before_script:
 - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 90
+- sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 90
 
 script:
   - mkdir build && cd build
