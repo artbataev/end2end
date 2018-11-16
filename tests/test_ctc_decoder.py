@@ -33,6 +33,16 @@ class TestCTCDecoder(unittest.TestCase):
         decoder.print_scores_for_sentence(["mother", "washed", "the", "frame"])
         print("=" * 50)
         decoder.print_scores_for_sentence(["mother".upper(), "washed".upper(), "the".upper(), "frame".upper()])
+        print("=" * 50)
+        print("=" * 50)
+        decoder = CTCBeamSearchDecoder(
+            beam_width=1, blank_idx=blank_idx,
+            labels=labels, time_major=False,
+            lm_path=os.path.join(os.path.dirname(__file__), "librispeech_data", "librispeech_3-gram_pruned.3e-7.arpa.gz"),
+            case_sensitive=True)
+        decoder.print_scores_for_sentence(["mother", "washed", "the", "frame"])
+        print("=" * 50)
+        decoder.print_scores_for_sentence(["mother".upper(), "washed".upper(), "the".upper(), "frame".upper()])
 
 
 if __name__ == "__main__":

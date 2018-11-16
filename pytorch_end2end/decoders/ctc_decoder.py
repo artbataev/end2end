@@ -21,7 +21,9 @@ class CTCDecoderError(Exception):
 
 
 class CTCBeamSearchDecoder:
-    def __init__(self, beam_width=100, blank_idx=0, time_major=True, labels=None, lm_path=None, alpha=0.0, beta=0.0):
+    def __init__(self, beam_width=100, blank_idx=0, time_major=True, labels=None,
+                 lm_path=None, alpha=1.0, beta=1.0,
+                 case_sensitive=False):
         """
         Decoder class
         :param beam_width:
@@ -31,6 +33,7 @@ class CTCBeamSearchDecoder:
         :param lm_path:
         :param alpha:
         :param beta:
+        :param case_sensitive:
         """
         self._beam_width = beam_width
         self._blank_idx = blank_idx
@@ -39,10 +42,11 @@ class CTCBeamSearchDecoder:
         self._alpha = alpha
         self._beta = beta
         self._time_major = time_major
+        self._case_sensitive = case_sensitive
 
         self._check_params()
 
-        self._decoder = cpp_ctc_decoder.CTCDecoder(self._blank_idx, self._labels, self._lm_path)
+        self._decoder = cpp_ctc_decoder.CTCDecoder(self._blank_idx, self._labels, self._lm_path, self._case_sensitive)
 
     def _check_params(self):
         # TODO: Check all params
