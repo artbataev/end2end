@@ -19,9 +19,9 @@ add_subdirectory(third_party/kenlm)
 include_directories(third_party/kenlm)
 
 
-add_library(cpp_ctc_decoder MODULE pytorch_end2end/src/ctc_decoder.cpp
-        pytorch_end2end/src/ctc_decoder.h
-        pytorch_end2end/src/ctc_loss.cpp)
+add_library(cpp_ctc_decoder MODULE pytorch_end2end/src/ctc_decoder.cpp)
+#pytorch_end2end/src/ctc_decoder.h
+#pytorch_end2end/src/ctc_loss.cpp
 
 
 target_link_libraries(cpp_ctc_decoder
