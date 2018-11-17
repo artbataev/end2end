@@ -4,8 +4,7 @@ import threading
 import numba
 import numpy as np
 import torch
-import torch.nn as nn
-from torch.autograd import Function, Variable
+from torch.autograd import Function
 
 from .utils import log_sum_exp
 
@@ -121,12 +120,13 @@ class CTCLossFunction(Function):
     @staticmethod
     def forward(ctx, logits, targets, logits_lengths, targets_lengths, blank_idx=0):
         # inputs: expected shape of seqLength x batchSize x alphabet_size, after logsoftmax!
+        tensor_type = logits.dtype
         loss, grads = _ctc_3d_loss(logits.detach().cpu().numpy(), targets.cpu().numpy(),
                                    logits_lengths.cpu().numpy(), targets_lengths.cpu().numpy(), blank_idx)
-        ctx.grads = torch.FloatTensor(grads)  # save for backward not works!
+        ctx.grads = torch.tensor(grads, dtype=tensor_type)  # save for backward not works!
         if logits.is_cuda:
-            return torch.FloatTensor(loss).cuda(logits.get_device())
-        return torch.FloatTensor(loss)
+            return torch.tensor(loss, dtype=tensor_type).cuda(logits.get_device())
+        return torch.tensor(loss, dtype=tensor_type)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -134,45 +134,9 @@ class CTCLossFunction(Function):
         :param grad_output: [batch_size]
         :return:
         """
-        loss_grads = Variable(ctx.grads)
+        loss_grads = ctx.grads
+        loss_grads.requires_grad_()
         if grad_output.is_cuda:
             loss_grads = loss_grads.cuda(grad_output.get_device())
         grad = loss_grads.contiguous() * grad_output.contiguous().view(-1, 1, 1)
         return grad, None, None, None, None
-
-
-
-if __name__ == "__main__":
-    from torch.autograd import gradcheck
-
-    # gradchek takes a tuple of tensor as input, check if your gradient
-    # evaluated with these tensors are close enough to numerical
-    # approximations and returns True if they all verify this condition.
-    # alphabet_size = 30
-    # max_targets_len = 50
-    # max_sequence_len = 100
-    # batch_size = 2
-
-    alphabet_size = 5
-    max_targets_len = 100
-    max_sequence_len = 200
-    batch_size = 2
-
-    np.random.seed(523)
-
-    targets_sizes = np.random.randint(1, max_targets_len + 1, batch_size)
-    inputs_sizes = targets_sizes + np.random.randint(0, (max_sequence_len - max_targets_len) + 1, batch_size)
-    inputs = np.random.randn(max_sequence_len, batch_size, alphabet_size + 1)
-    # expected shape seqLength x batchSize x alphabet_size
-
-    sum_target_len = np.sum(targets_sizes)
-    targets_flat = (1 + np.random.rand(sum_target_len) * alphabet_size).astype(np.int64)
-    # print(targets_flat, inputs.shape, inputs)
-
-    input = (nn.LogSoftmax(dim=2)(Variable(torch.FloatTensor(inputs), requires_grad=True)),
-             Variable(torch.LongTensor(targets_flat), requires_grad=False),
-             Variable(torch.LongTensor(inputs_sizes), requires_grad=False),
-             Variable(torch.LongTensor(targets_sizes), requires_grad=False))
-    print(CTCLossFunction.apply(*input).data[0])
-    test = gradcheck(CTCLossFunction.apply, input)  # , atol=1e-5, rtol=1e-5)
-    print(test)

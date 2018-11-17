@@ -10,6 +10,8 @@ import unittest
 import torch
 import torch.nn.functional as F
 from pytorch_end2end import CTCLoss
+from torch.autograd.gradcheck import gradcheck
+import numpy as np
 
 
 class TestCTCLoss(unittest.TestCase):
@@ -161,6 +163,27 @@ class TestCTCLoss(unittest.TestCase):
         expected_cost = 5.42262
         self.assertAlmostEqual(cpu_cost, gpu_cost, self.places)
         self.assertAlmostEqual(cpu_cost, expected_cost, self.places)
+
+    def test_gradient(self):
+        alphabet_size = 5
+        max_targets_len = 100
+        max_sequence_len = 200
+        batch_size = 2
+
+        targets_lengths = np.random.randint(low=1, high=max_targets_len + 1, size=batch_size)
+        logits_lengths = targets_lengths + np.random.randint(low=0, high=(max_sequence_len - max_targets_len + 1), size=batch_size)
+        logits = np.random.randn(batch_size, max_sequence_len, alphabet_size + 1) # 1 - blank, full_alphabet: alphabet_size + 1
+        targets = (1 + np.random.rand(batch_size, np.max(targets_lengths)) * alphabet_size).astype(np.int64)
+
+        targets_lengths = torch.LongTensor(targets_lengths)
+        logits_lengths = torch.LongTensor(logits_lengths)
+        targets = torch.LongTensor(targets)
+        logits = torch.DoubleTensor(logits).requires_grad_()
+
+        input_ = (logits, targets, logits_lengths, targets_lengths)
+
+        test_result = gradcheck(CTCLoss(blank_idx=0, time_major=False, after_logsoftmax=False), input_, eps=1e-6, atol=1e-4)
+        self.assertTrue(test_result, "Gradient Invalid")
 
 
 if __name__ == '__main__':
