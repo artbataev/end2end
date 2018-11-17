@@ -59,7 +59,9 @@ public:
     }
 
     lm::WordIndex get_idx(const std::string& word) {
-        auto word_to_find = case_sensitive ? word : str_to_lower(word);
+        if (case_sensitive)
+            return lm_model->GetVocabulary().Index(word);
+        auto word_to_find = str_to_lower(word);
         if (word2index.count(word_to_find) > 0)
             return word2index.at(word_to_find);
         return lm_model->GetVocabulary().NotFound();
