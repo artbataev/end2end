@@ -168,20 +168,22 @@
 
 
 <div class="viewcode-block" id="CTCBeamSearchDecoder"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCBeamSearchDecoder">[docs]</a><span class="k">class</span> <span class="nc">CTCBeamSearchDecoder</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Decoder class to perform CTC Beam Search</span>
+
+<span class="sd">        :param beam_width: width of beam (number of stored hypotheses), default ``100``. \n</span>
+<span class="sd">            If ``1``, decoder always perform greedy (argmax) decoding</span>
+<span class="sd">        :param blank_idx: id of blank label, default ``0``</span>
+<span class="sd">        :param time_major: if logits are time major (else batch major)</span>
+<span class="sd">        :param labels: list of strings with labels (including blank symbol), e.g. ``[&quot;_&quot;, &quot;a&quot;, &quot;b&quot;, &quot;c&quot;]``</span>
+<span class="sd">        :param lm_path: path to language model (ARPA format or gzipped ARPA)</span>
+<span class="sd">        :param alpha: acoustic (original network) model weight, makes sense only if language model is present</span>
+<span class="sd">        :param beta: language model weight</span>
+<span class="sd">        :param case_sensitive: obtain language model scores with respect to case, default ``False``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam_width</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">lm_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
                  <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Decoder class</span>
-<span class="sd">        :param beam_width:</span>
-<span class="sd">        :param blank_idx:</span>
-<span class="sd">        :param time_major:</span>
-<span class="sd">        :param labels:</span>
-<span class="sd">        :param lm_path:</span>
-<span class="sd">        :param alpha:</span>
-<span class="sd">        :param beta:</span>
-<span class="sd">        :param case_sensitive:</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_beam_width</span> <span class="o">=</span> <span class="n">beam_width</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span> <span class="o">=</span> <span class="n">blank_idx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span> <span class="o">=</span> <span class="n">labels</span> <span class="ow">or</span> <span class="p">[]</span>
@@ -206,9 +208,20 @@
 <div class="viewcode-block" id="CTCBeamSearchDecoder.decode"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCBeamSearchDecoder.decode">[docs]</a>    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Perform decoding</span>
-<span class="sd">        :param logits:</span>
-<span class="sd">        :param logits_lengths:</span>
-<span class="sd">        :return: (decoded_targets, decoded_targets_lengths, decoded_sentences)</span>
+
+<span class="sd">        :param logits: tensor with neural network outputs after logsoftmax \n</span>
+<span class="sd">            of shape ``(sequence_length, batch_size, alphabet_size)`` if ``time_major`` \n</span>
+<span class="sd">            else of shape ``(batch_size, sequence_length, alphabet_size)``</span>
+<span class="sd">        :param logits_lengths: default ``None``</span>
+<span class="sd">        :return: ``(decoded_targets, decoded_targets_lengths, decoded_sentences)`` \n</span>
+<span class="sd">            decoded_targets:</span>
+<span class="sd">                tensor with result targets of shape ``(batch_size, sequence_length)``,</span>
+<span class="sd">                doesn&#39;t contain blank symbols \n</span>
+<span class="sd">            decoded_targets_length:</span>
+<span class="sd">                tensor with lengths of decoded targets \n</span>
+<span class="sd">            decoded_sentences:</span>
+<span class="sd">                list of strings, shape ``(batch_size)``.</span>
+<span class="sd">                If ``labels are None``, list of empty string is returned. \n</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beam_width</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode_greedy</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="p">)</span>
@@ -220,9 +233,20 @@
 <div class="viewcode-block" id="CTCBeamSearchDecoder.decode_greedy"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCBeamSearchDecoder.decode_greedy">[docs]</a>    <span class="k">def</span> <span class="nf">decode_greedy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Perform greedy (argmax) decoding</span>
-<span class="sd">        :param logits:</span>
-<span class="sd">        :param logits_lengths:</span>
-<span class="sd">        :return: (decoded_targets, decoded_targets_lengths, decoded_sentences)</span>
+
+<span class="sd">        :param logits: tensor with neural network outputs after logsoftmax \n</span>
+<span class="sd">            of shape ``(sequence_length, batch_size, alphabet_size)`` if ``time_major`` \n</span>
+<span class="sd">            else of shape ``(batch_size, sequence_length, alphabet_size)``</span>
+<span class="sd">        :param logits_lengths: default ``None``</span>
+<span class="sd">        :return: ``(decoded_targets, decoded_targets_lengths, decoded_sentences)`` \n</span>
+<span class="sd">            decoded_targets:</span>
+<span class="sd">                tensor with result targets of shape ``(batch_size, sequence_length)``,</span>
+<span class="sd">                doesn&#39;t contain blank symbols \n</span>
+<span class="sd">            decoded_targets_length:</span>
+<span class="sd">                tensor with lengths of decoded targets \n</span>
+<span class="sd">            decoded_sentences:</span>
+<span class="sd">                list of strings, shape ``(batch_size)``.</span>
+<span class="sd">                If ``labels are None``, list of empty string is returned. \n</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_major</span><span class="p">:</span>
             <span class="n">logits</span> <span class="o">=</span> <span class="n">logits</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># batch_size * sequence_length * alphabet_size</span>
