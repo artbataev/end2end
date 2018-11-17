@@ -10,9 +10,10 @@ from .utils import log_sum_exp
 
 
 @numba.jit(nogil=True)
-def _ctc_loss(logits, targets, blank_idx=0):
+def _ctc_loss_np(logits, targets, blank_idx=0):
     """
     http://www.cs.toronto.edu/~graves/icml_2006.pdf
+
     :param logits: numpy array, sequence_len * num_labels
     :param targets: numpy array, target labels
     :param blank: blank index
@@ -84,17 +85,22 @@ def _ctc_loss(logits, targets, blank_idx=0):
     return -loss_forward, grad
 
 
-def _ctc_3d_loss(logits, targets, logits_lengths, targets_length, blank_idx=0):
+def _ctc_3d_loss_np(logits, targets, logits_lengths, targets_length, blank_idx=0):
     batch_size = len(targets_length)
     grads = np.zeros_like(logits)
 
     losses = np.zeros(batch_size)
 
-    # parallel computation, threading - because gil is released with numba.jin(nogil=True)
+    # parallel computation, threading - because gil is released with numba.jit(nogil=True)
+    # equivalent iterative computation is:
+    # for i in range(batch_size):
+    #     loss, grad = _ctc_loss_np(logits[:logits_lengths[i], i, :], targets[i, :targets_length[i]], blank_idx)
+    #     grads[:logits_lengths[i], i, :] = grad
+    #     losses[i] = loss
     que = queue.Queue()
     threads = []
     for i in range(batch_size):
-        t = threading.Thread(target=lambda q, i, *args: q.put((i, _ctc_loss(*args))),
+        t = threading.Thread(target=lambda q, i, *args: q.put((i, _ctc_loss_np(*args))),
                              args=(que, i, logits[i, :logits_lengths[i], :],
                                    targets[i, :targets_length[i]], blank_idx))
         threads.append(t)
@@ -107,21 +113,25 @@ def _ctc_3d_loss(logits, targets, logits_lengths, targets_length, blank_idx=0):
         grads[i, :logits_lengths[i], :] = grad
         losses[i] = loss
 
-    # iterative computation
-    # for i in range(batch_size):
-    #     loss, grad = _ctc_loss(inputs[:input_sizes[i], i, :], targets_flat[targets_sizes_start[i]:targets_sizes_end[i]])
-    #     grads[:input_sizes[i], i, :] = grad
-    #     losses[i] = loss
-
     return losses, grads
 
 
 class CTCLossFunction(Function):
     @staticmethod
     def forward(ctx, logits, targets, logits_lengths, targets_lengths, blank_idx=0):
-        # inputs: expected shape of seqLength x batchSize x alphabet_size, after logsoftmax!
+        """
+        Computes and returns CTC Loss, stores grads for backward computation
+
+        :param ctx: storage for inner computations (to use in backward method)
+        :param logits: Float or Double Tensor of shape [batch_size, sequence_length, alphabet_size]
+        :param targets: Tensor with targets of shape [batch_size, targets_sequence_length]
+        :param logits_lengths: Tensor of shape [batch_size] with lenghts of sequences
+        :param targets_lengths: Tensor of shape [batch_size] with lengths of target sequences
+        :param blank_idx: id of blank label, default 0
+        :return: tensor with loss of shape [batch_size]
+        """
         tensor_type = logits.dtype
-        loss, grads = _ctc_3d_loss(logits.detach().cpu().numpy(), targets.cpu().numpy(),
+        loss, grads = _ctc_3d_loss_np(logits.detach().cpu().numpy(), targets.cpu().numpy(),
                                    logits_lengths.cpu().numpy(), targets_lengths.cpu().numpy(), blank_idx)
         ctx.grads = torch.tensor(grads, dtype=tensor_type)  # save for backward not works!
         if logits.is_cuda:
@@ -131,8 +141,10 @@ class CTCLossFunction(Function):
     @staticmethod
     def backward(ctx, grad_output):
         """
+        Computes backward for CTC Loss
+
         :param grad_output: [batch_size]
-        :return:
+        :return: gradient for logits, None for other inputs (targets, logits_lengths, etc.: see forward method)
         """
         loss_grads = ctx.grads
         loss_grads.requires_grad_()
