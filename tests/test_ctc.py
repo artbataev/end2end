@@ -164,15 +164,19 @@ class TestCTCLoss(unittest.TestCase):
         self.assertAlmostEqual(cpu_cost, gpu_cost, self.places)
         self.assertAlmostEqual(cpu_cost, expected_cost, self.places)
 
+    # @unittest.skip("not implemented")
     def test_gradient(self):
         alphabet_size = 5
-        max_targets_len = 100
-        max_sequence_len = 200
+        max_targets_len = 10
+        max_sequence_len = 20
         batch_size = 2
 
+        np.random.seed(678)  # fix random seed
         targets_lengths = np.random.randint(low=1, high=max_targets_len + 1, size=batch_size)
-        logits_lengths = targets_lengths + np.random.randint(low=0, high=(max_sequence_len - max_targets_len + 1), size=batch_size)
-        logits = np.random.randn(batch_size, max_sequence_len, alphabet_size + 1) # 1 - blank, full_alphabet: alphabet_size + 1
+        logits_lengths = targets_lengths + np.random.randint(
+            low=0, high=(max_sequence_len - max_targets_len + 1), size=batch_size)
+        logits = np.random.randn(batch_size, max_sequence_len, alphabet_size + 1)
+        # 1 - blank, full_alphabet: alphabet_size + 1
         targets = (1 + np.random.rand(batch_size, np.max(targets_lengths)) * alphabet_size).astype(np.int64)
 
         targets_lengths = torch.LongTensor(targets_lengths)
@@ -182,7 +186,8 @@ class TestCTCLoss(unittest.TestCase):
 
         input_ = (logits, targets, logits_lengths, targets_lengths)
 
-        test_result = gradcheck(CTCLoss(blank_idx=0, time_major=False, after_logsoftmax=False), input_, eps=1e-6, atol=1e-4)
+        test_result = gradcheck(CTCLoss(blank_idx=0, time_major=False, after_logsoftmax=False),
+                                input_, eps=1e-6, atol=1e-4)
         self.assertTrue(test_result, "Gradient Invalid")
 
 

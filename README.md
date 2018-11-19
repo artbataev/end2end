@@ -7,7 +7,7 @@
 
 ## Losses
 - [x] Connectionist temporal classification (CTC) (python / numba)
-- [ ] CTC (C++, CPU)
+- [x] CTC (C++, CPU)
 - [x] CTC without blank (python / numba)
 - [x] Dynamic segmentation with CTC (python)
 

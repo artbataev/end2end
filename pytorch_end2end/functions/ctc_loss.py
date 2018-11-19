@@ -7,7 +7,16 @@ import torch
 from torch.autograd import Function
 
 from .utils import log_sum_exp
-
+import os
+import sys
+module_base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+build_path = os.path.join(module_base, "cmake-build-debug")
+build_path2 = os.path.join(module_base, "build")
+if os.path.exists(build_path2):
+    sys.path.append(build_path2)
+else:
+    sys.path.append(build_path)
+import cpp_ctc_loss
 
 @numba.jit(nogil=True)
 def _ctc_loss_np(logits, targets, blank_idx=0):
@@ -131,12 +140,16 @@ class CTCLossFunction(Function):
         :return: tensor with loss of shape [batch_size]
         """
         tensor_type = logits.dtype
-        loss, grads = _ctc_3d_loss_np(logits.detach().cpu().numpy(), targets.cpu().numpy(),
-                                   logits_lengths.cpu().numpy(), targets_lengths.cpu().numpy(), blank_idx)
-        ctx.grads = torch.tensor(grads, dtype=tensor_type)  # save for backward not works!
-        if logits.is_cuda:
-            return torch.tensor(loss, dtype=tensor_type).cuda(logits.get_device())
-        return torch.tensor(loss, dtype=tensor_type)
+        ctc_engine = cpp_ctc_loss.CTCLossWrapper(blank_idx)
+        loss, grads = ctc_engine.ctc_loss_forward(logits, targets, logits_lengths, targets_lengths)
+        # loss, grads = _ctc_3d_loss_np(logits.detach().cpu().numpy(), targets.cpu().numpy(),
+        #                            logits_lengths.cpu().numpy(), targets_lengths.cpu().numpy(), blank_idx)
+        # loss = torch.tensor(loss, dtype=tensor_type)
+        # grads = torch.tensor(grads, dtype=tensor_type)  # save for backward not works!
+        # if logits.is_cuda:
+        #     loss = loss.cuda(logits.get_device())
+        ctx.grads = grads
+        return loss
 
     @staticmethod
     def backward(ctx, grad_output):
