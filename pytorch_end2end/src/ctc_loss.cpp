@@ -7,7 +7,7 @@
 
 CTCLossWrapper::CTCLossWrapper(int blank_idx_) : blank_idx{blank_idx_} {}
 
-torch::Tensor log_sum_exp(torch::Tensor log_prob_1, torch::Tensor log_prob_2) {
+torch::Tensor log_sum_exp(const torch::Tensor& log_prob_1, const torch::Tensor& log_prob_2) {
     if (log_prob_1.item<double>() == -INFINITY)
         return log_prob_2;
     if (log_prob_2.item<double>() == -INFINITY)
@@ -18,12 +18,16 @@ torch::Tensor log_sum_exp(torch::Tensor log_prob_1, torch::Tensor log_prob_2) {
 }
 
 void CTCLossWrapper::_ctc_loss_forward_2d(
-        const at::Tensor& logits_2d,
-        const at::Tensor& targets_1d,
+        const torch::Tensor& logits,
+        const torch::Tensor& targets,
         int sequence_length, int targets_len,
         int batch_i,
-        at::Tensor& losses,
-        at::Tensor& grads) {
+        torch::Tensor& losses,
+        torch::Tensor& grads) {
+    auto logits_2d = logits[batch_i].detach();
+    logits_2d.set_requires_grad(false);
+    auto targets_1d = targets[batch_i].detach();
+    targets_1d.set_requires_grad(false);
     auto num_labels = logits_2d.size(1);
     auto extended_targets_len = targets_len * 2 + 1;
     auto extended_targets = torch::full(extended_targets_len, blank_idx, targets_1d.options());
@@ -108,13 +112,15 @@ std::tuple<
         const at::Tensor& targets_lengths) {
 
     auto batch_size = logits_lengths.size(0);
-    auto losses = at::zeros(batch_size, logits.options());
+    auto losses = torch::zeros(batch_size, logits.options());
     auto grads = torch::zeros_like(logits);
+    grads.set_requires_grad(false);
+    losses.set_requires_grad(false);
     std::vector<std::thread> threads;
     threads.reserve(static_cast<size_t>(batch_size));
     for (int i = 0; i < batch_size; i++) {
         threads.emplace_back([this, &logits, &targets, i, &logits_lengths, &targets_lengths, &losses, &grads] {
-            _ctc_loss_forward_2d(logits[i], targets[i],
+            _ctc_loss_forward_2d(logits, targets,
                                  logits_lengths[i].item<int>(), targets_lengths[i].item<int>(),
                                  i, losses, grads);
         });

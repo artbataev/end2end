@@ -17,12 +17,12 @@ public:
 
 private:
     void _ctc_loss_forward_2d(
-            const at::Tensor& logits_2d,
-            const at::Tensor& targets_1d,
+            const torch::Tensor& logits,
+            const torch::Tensor& targets,
             int sequence_length, int targets_len,
             int batch_i,
-            at::Tensor& losses,
-            at::Tensor& grads);
+            torch::Tensor& losses,
+            torch::Tensor& grads);
 
     int blank_idx;
 };
