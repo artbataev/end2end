@@ -89,14 +89,14 @@ std::tuple<
     int current_sequence_len = 0;
     for(int i = 0; i < batch_size; i++) {
         std::tie(decoded_indices_vec[i], current_sequence_len, decoded_sentences[i]) = decode_sentence(
-                logits[i], 0); // logits_lengths[i].item<int>()
+                logits[i], logits_lengths[i].item<int>());
         decoded_targets_lengths[i] = current_sequence_len;
     }
 
     auto max_sequence_len = 1; // decoded_targets_lengths.max().item<long long>();
     auto decoded_indices = at::zeros({batch_size, max_sequence_len}, logits_lengths.options());
     for(int i = 0; i < batch_size; i++) {
-        for (int l = 0; l < 1 /*decoded_targets_lengths[i].item<int>()*/; l++) {
+        for (int l = 0; l < decoded_targets_lengths[i].item<int>(); l++) {
             decoded_indices[i][l] = decoded_indices_vec[i][l];
         }
     }
@@ -109,7 +109,7 @@ struct Hypothesis {
 };
 
 std::tuple<std::vector<int>, int, std::string> CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
-//    auto logits_a = logits_2d.accessor<float, 2>();
+    auto logits_a = logits_2d.accessor<float, 2>();
 //    auto alphabet_size = static_cast<int>(logits_2d.size(1));
     std::vector<Hypothesis> hyps;
     std::vector<Hypothesis> new_hyps;
