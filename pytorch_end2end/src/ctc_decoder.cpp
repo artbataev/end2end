@@ -93,7 +93,7 @@ std::tuple<
         decoded_targets_lengths[i] = current_sequence_len;
     }
 
-    auto max_sequence_len = 1; // decoded_targets_lengths.max().item<long long>();
+    auto max_sequence_len = decoded_targets_lengths.max().item<int64_t>();
     auto decoded_indices = at::zeros({batch_size, max_sequence_len}, logits_lengths.options());
     for(int i = 0; i < batch_size; i++) {
         for (int l = 0; l < decoded_targets_lengths[i].item<int>(); l++) {
