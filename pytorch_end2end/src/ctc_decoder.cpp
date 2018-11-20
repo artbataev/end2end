@@ -109,7 +109,7 @@ struct Hypothesis {
 };
 
 std::tuple<std::vector<int>, int, std::string> CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
-    auto logits_a = logits_2d.accessor<float, 2>();
+//    auto logits_a = logits_2d.accessor<float, 2>();
 //    auto alphabet_size = static_cast<int>(logits_2d.size(1));
     std::vector<Hypothesis> hyps;
     std::vector<Hypothesis> new_hyps;
