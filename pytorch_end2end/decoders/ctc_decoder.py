@@ -48,7 +48,8 @@ class CTCBeamSearchDecoder:
 
         self._check_params()
 
-        self._decoder = cpp_ctc_decoder.CTCDecoder(self._blank_idx, self._labels, self._lm_path, self._case_sensitive)
+        self._decoder = cpp_ctc_decoder.CTCDecoder(self._blank_idx, self._beam_width,
+                                                   self._labels, self._lm_path, self._case_sensitive)
 
     def _check_params(self):
         # TODO: Check all params
