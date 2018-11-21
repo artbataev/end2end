@@ -79,7 +79,22 @@ class CTCBeamSearchDecoder:
         """
         if self._beam_width == 1:
             return self.decode_greedy(logits, logits_lengths)
-        raise NotImplementedError("Beam search is not implemented")
+
+        if self._time_major:
+            logits = logits.transpose(1, 0)  # batch_size * sequence_length * alphabet_size
+        logits = logits.detach().cpu()
+        batch_size = logits.size()[0]
+        max_sequence_length = logits.size()[1]
+        if logits_lengths is None:
+            logits_lengths = torch.zeros(batch_size, dtype=torch.int).fill_(max_sequence_length)
+        else:
+            logits_lengths = logits_lengths.cpu()
+
+        decoded_targets, decoded_targets_lengths, decoded_sentences = self._decoder.decode(
+            logits=logits,
+            logits_lengths=logits_lengths)
+
+        return decoded_targets, decoded_targets_lengths, decoded_sentences
 
     def print_scores_for_sentence(self, words):
         self._decoder.print_scores_for_sentence(words)

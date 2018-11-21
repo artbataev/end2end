@@ -79,7 +79,7 @@ std::tuple<
         at::Tensor,
         std::vector<std::string>
 > CTCDecoder::decode(const at::Tensor& logits,
-         const at::Tensor& logits_lengths) {
+                     const at::Tensor& logits_lengths) {
     auto decoded_targets_lengths = at::zeros_like(logits_lengths);
     auto batch_size = logits_lengths.size(0);
 
@@ -87,7 +87,7 @@ std::tuple<
     std::vector<std::vector<int>> decoded_indices_vec{static_cast<size_t>(batch_size), std::vector<int>{}};
 
     int current_sequence_len = 0;
-    for(int i = 0; i < batch_size; i++) {
+    for (int i = 0; i < batch_size; i++) {
         std::tie(decoded_indices_vec[i], current_sequence_len, decoded_sentences[i]) = decode_sentence(
                 logits[i], logits_lengths[i].item<int>());
         decoded_targets_lengths[i] = current_sequence_len;
@@ -95,7 +95,7 @@ std::tuple<
 
     auto max_sequence_len = decoded_targets_lengths.max().item<int64_t>();
     auto decoded_indices = at::zeros({batch_size, max_sequence_len}, logits_lengths.options());
-    for(int i = 0; i < batch_size; i++) {
+    for (int i = 0; i < batch_size; i++) {
         for (int l = 0; l < decoded_targets_lengths[i].item<int>(); l++) {
             decoded_indices[i][l] = decoded_indices_vec[i][l];
         }
@@ -104,23 +104,65 @@ std::tuple<
 }
 
 struct Hypothesis {
-    // path to prev
-    // last
+    Hypothesis(int last_char_id_, double weight_, std::shared_ptr<Hypothesis> prev_) :
+            last_char_id{last_char_id_}, weight{weight_}, prev{prev_} {}
+
+    int last_char_id;
+    double weight;
+    std::shared_ptr<Hypothesis> prev;
 };
 
-std::tuple<std::vector<int>, int, std::string> CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
+using hyp_ptr_t = std::shared_ptr<Hypothesis>;
+
+std::tuple<std::vector<int>, int, std::string>
+CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
     auto logits_a = logits_2d.accessor<float, 2>();
-//    auto alphabet_size = static_cast<int>(logits_2d.size(1));
-    std::vector<Hypothesis> hyps;
-    std::vector<Hypothesis> new_hyps;
-    hyps.reserve(static_cast<int>(beam_width));
-    for(int l = 0; l < sequence_len; l++) {
-        std::swap(hyps, new_hyps);
+    auto alphabet_size = static_cast<int>(logits_2d.size(1));
+    std::vector<hyp_ptr_t> hyps;
+    std::vector<hyp_ptr_t> new_hyps;
+    hyps.reserve(static_cast<size_t>(beam_width));
+    new_hyps.reserve(static_cast<size_t>(beam_width));
+    hyps.emplace_back(std::make_shared<Hypothesis>(blank_idx, 0.0, nullptr));
+    for (int l = 0; l < sequence_len; l++) {
+        // generate new hypotheses
+        for (const auto& prev_hyp: hyps) {
+            for (int char_id = 0; char_id < alphabet_size; char_id++) {
+                new_hyps.emplace_back(
+                        std::make_shared<Hypothesis>(char_id, prev_hyp->weight + logits_a[l][char_id], prev_hyp));
+            }
+        }
+        std::sort(new_hyps.begin(), new_hyps.end(),
+                  [](const hyp_ptr_t& lhs, const hyp_ptr_t& rhs) { return lhs->weight > rhs->weight; });
+        if (new_hyps.size() <= beam_width)
+            std::swap(hyps, new_hyps);
+        else {
+            hyps.clear();
+            std::move(new_hyps.begin(), new_hyps.end(), std::back_inserter(hyps));
+        }
         new_hyps.clear();
-
-
     }
-    return {{0}, 0, "_"};
+
+    std::vector<int> result_sequence_tmp;
+    std::vector<int> result_sequence;
+    std::string result_sequence_str;
+    int result_sequence_len = 0;
+    auto cur_hyp_element = hyps[0];
+    while (cur_hyp_element != nullptr) {
+        result_sequence_tmp.push_back(cur_hyp_element->last_char_id);
+        cur_hyp_element = cur_hyp_element->prev;
+    }
+    std::reverse(result_sequence_tmp.begin(), result_sequence_tmp.end());
+    auto prev_symbol = blank_idx;
+    for (const auto& current_symbol: result_sequence_tmp) {
+        if (current_symbol != blank_idx && prev_symbol != current_symbol) {
+            result_sequence.emplace_back(current_symbol);
+            if (!labels.empty())
+                result_sequence_str += labels[current_symbol];
+            result_sequence_len += 1;
+        }
+        prev_symbol = current_symbol;
+    }
+    return {result_sequence, result_sequence_len, result_sequence_str};
 }
 
 std::tuple<
