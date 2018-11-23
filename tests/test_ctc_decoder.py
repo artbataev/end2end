@@ -53,7 +53,7 @@ class TestCTCDecoder(unittest.TestCase):
         :return:
         """
         labels = ["\'", ' ', 'a', 'b', 'c', 'd', '_']
-        decoder = CTCBeamSearchDecoder(beam_width=50, blank_idx=6, time_major=False, labels=labels)
+        decoder = CTCBeamSearchDecoder(beam_width=20, blank_idx=6, time_major=False, labels=labels)
         probs_seq1 = [
             [0.06390443, 0.21124858, 0.27323887, 0.06870235, 0.0361254, 0.18184413, 0.16493624],
             [0.03309247, 0.22866108, 0.24390638, 0.09699597, 0.31895462, 0.0094893, 0.06890021],
@@ -79,12 +79,14 @@ class TestCTCDecoder(unittest.TestCase):
         _, _, beam_search_result = decoder.decode(log_probs)
         self.assertListEqual(beam_search_result, expected_beam_search_result)
         # print(beam_search_result)
-
+        #
         # from pytorch_end2end import CTCLoss
         # criterion = CTCLoss(blank_idx=6, time_major=False, after_logsoftmax=True)
-        # loss = criterion(log_probs, torch.LongTensor([[2, 4, 5, 4], [3, 0, 2, 0]]), torch.LongTensor([5, 5]), torch.LongTensor([4, 3]))
+        # loss = criterion(log_probs, torch.LongTensor([[2, 4, 0, 3, 5, 4], [3, 0, 5, 2, 0, 0]]),
+        #                  torch.LongTensor([6, 6]), torch.LongTensor([6, 4]))
         # print(loss)
-        # loss = criterion(log_probs, torch.LongTensor([[2, 4, 5, 4], [3, 0, 5, 2]]), torch.LongTensor([5, 5]), torch.LongTensor([4, 4]))
+        # loss = criterion(log_probs, torch.LongTensor([[2, 4, 5, 4], [3, 0, 2, 0]]),
+        #                  torch.LongTensor([6, 6]), torch.LongTensor([4, 3]))
         # print(loss)
 
 

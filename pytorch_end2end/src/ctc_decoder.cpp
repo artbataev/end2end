@@ -105,22 +105,6 @@ std::tuple<
 }
 
 
-using prefix_key_t = std::vector<int>;
-
-class Prefix {
-public:
-    Prefix() : prob_last_b{-INFINITY}, prob_last_nb{-INFINITY} {};
-
-    Prefix(double prob_last_b_, double prob_last_nb_) : prob_last_b{prob_last_b_}, prob_last_nb{prob_last_nb_} {}
-
-    double prob_last_b;
-    double prob_last_nb;
-
-    double get_full_prob() {
-        return log_sum_exp(prob_last_nb, prob_last_b);
-    }
-};
-
 std::string CTCDecoder::indices2str(const std::vector<int>& char_ids) {
     std::string result;
     result.reserve(char_ids.size());
@@ -133,13 +117,30 @@ std::string CTCDecoder::indices2str(const std::vector<int>& char_ids) {
 
 std::string CTCDecoder::indices2str(const at::Tensor& char_ids, int len) {
     std::string result;
-    result.reserve(len);
+    result.reserve(static_cast<size_t>(len));
     if (!labels.empty()) {
         for (int i = 0; i < len; i++)
             result += labels[char_ids[i].item<int>()];
     }
     return result;
 }
+
+using prefix_key_t = std::vector<int>;
+
+class Prefix {
+public:
+    Prefix() : prob_last_b{-INFINITY}, prob_last_nb{-INFINITY} {};
+
+//    Prefix(double prob_last_b_, double prob_last_nb_) : prob_last_b{prob_last_b_}, prob_last_nb{prob_last_nb_} {}
+
+    double prob_last_b;
+    double prob_last_nb;
+
+    double get_full_prob() {
+        return log_sum_exp(prob_last_nb, prob_last_b);
+    }
+};
+
 
 std::tuple<std::vector<int>, int, std::string>
 CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
@@ -153,18 +154,19 @@ CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
 
     for (int l = 0; l < sequence_len; l++) {
         // generate new hypotheses
-        next_prefixes.clear();
         for (const auto& prev_prefix: prev_prefixes) {
             auto& prefix_key = prev_prefix.first;
             auto& prefix_weights = prev_prefix.second;
             auto last_char_id = prefix_key[prefix_key.size() - 1];
+            auto cur_log_prob_blank = logits_a[l][blank_idx];
             for (int char_id = 0; char_id < alphabet_size; char_id++) {
                 auto cur_log_prob = logits_a[l][char_id];
                 if (char_id == blank_idx) {
-                    auto score = cur_log_prob + log_sum_exp(prefix_weights.prob_last_b, prefix_weights.prob_last_nb);
-                    next_prefixes[prefix_key].prob_last_b = log_sum_exp(score, next_prefixes[prefix_key].prob_last_b);
+                    next_prefixes[prefix_key].prob_last_b = log_sum_exp(
+                            next_prefixes[prefix_key].prob_last_b,
+                            cur_log_prob + log_sum_exp(prefix_weights.prob_last_b, prefix_weights.prob_last_nb));
                 } else {
-                    auto new_prefix_key = prefix_key;
+                    auto new_prefix_key{prefix_key};
                     new_prefix_key.emplace_back(char_id);
                     if (char_id == last_char_id) {
                         next_prefixes[prefix_key].prob_last_nb = log_sum_exp(
@@ -176,6 +178,15 @@ CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
                                 next_prefixes[new_prefix_key].prob_last_nb,
                                 cur_log_prob + log_sum_exp(prefix_weights.prob_last_b, prefix_weights.prob_last_nb));
                     }
+                    if (next_prefixes.at(new_prefix_key).prob_last_b == -INFINITY &&
+                        prev_prefixes.count(new_prefix_key) > 0)
+                        next_prefixes.at(new_prefix_key).prob_last_b =
+                                cur_log_prob_blank + prev_prefixes.at(new_prefix_key).get_full_prob();
+
+                    if (next_prefixes.at(new_prefix_key).prob_last_nb == -INFINITY &&
+                        prev_prefixes.count(new_prefix_key) > 0)
+                        next_prefixes.at(new_prefix_key).prob_last_nb =
+                                cur_log_prob + prev_prefixes.at(new_prefix_key).prob_last_nb;
                 }
             }
         }
@@ -194,6 +205,7 @@ CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
         } else {
             std::swap(prev_prefixes, next_prefixes);
         }
+        next_prefixes.clear();
     }
 
     std::vector<prefix_key_t> prev_prefixes_keys;
@@ -207,6 +219,10 @@ CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
 
     std::vector<int> result_sequence{prev_prefixes_keys[0].begin() + 1, prev_prefixes_keys[0].end()};
     std::string result_sequence_str = indices2str(result_sequence);
+//    for(int i = 0; i < std::min(10, static_cast<int>(prev_prefixes_keys.size())); i++) {
+//        const auto& prefix = prev_prefixes_keys[i];
+//        std::cout << indices2str({prefix.begin() + 1, prefix.end()}) << " " << prev_prefixes[prefix].get_full_prob() << "\n";
+//    }
 
     return {result_sequence, static_cast<int>(result_sequence.size()), result_sequence_str};
 }
@@ -219,13 +235,11 @@ std::tuple<
         const at::Tensor& logits,
         const at::Tensor& logits_lengths) {
     // collapse repeated, remove blank
+    auto batch_size = logits_lengths.size(0);
     auto argmax_logits = logits.argmax(-1);
     auto decoded_targets = at::zeros_like(argmax_logits);
     auto decoded_targets_lengths = at::zeros_like(logits_lengths);
-    auto batch_size = logits_lengths.size(0);
-
-    std::vector<std::string> decoded_sentences{};
-    decoded_sentences.reserve(static_cast<size_t>(batch_size));
+    std::vector<std::string> decoded_sentences(static_cast<size_t>(batch_size), "");
 
     for (int i = 0; i < batch_size; i++) {
         auto prev_symbol = blank_idx;
@@ -238,7 +252,7 @@ std::tuple<
             }
             prev_symbol = current_symbol;
         }
-        decoded_sentences.emplace_back(indices2str(decoded_targets[i], current_len));
+        decoded_sentences[i] = indices2str(decoded_targets[i], current_len);
         decoded_targets_lengths[i] = current_len;
     }
 
