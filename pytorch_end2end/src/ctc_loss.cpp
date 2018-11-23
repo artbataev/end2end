@@ -4,18 +4,9 @@
 #include <algorithm>
 #include <thread>
 #include <vector>
+#include "math_utils.h"
 
 CTCLossWrapper::CTCLossWrapper(int blank_idx_) : blank_idx{blank_idx_} {}
-
-torch::Tensor log_sum_exp(const torch::Tensor& log_prob_1, const torch::Tensor& log_prob_2) {
-    if (log_prob_1.item<double>() == -INFINITY)
-        return log_prob_2;
-    if (log_prob_2.item<double>() == -INFINITY)
-        return log_prob_1;
-    if (log_prob_1.item<double>() > log_prob_2.item<double>())
-        return log_prob_1 + torch::log(1.0 + torch::exp(log_prob_2 - log_prob_1));
-    return log_prob_2 + torch::log(1.0 + torch::exp(log_prob_1 - log_prob_2));
-}
 
 void CTCLossWrapper::_ctc_loss_forward_2d(
         const torch::Tensor& logits,

@@ -6,6 +6,7 @@
 #include <torch/extension.h>
 #include "lm/model.hh"
 #include "lm/enumerate_vocab.hh"
+#include "math_utils.h"
 #include "ctc_decoder.h"
 
 
@@ -103,66 +104,111 @@ std::tuple<
     return {decoded_indices, decoded_targets_lengths, decoded_sentences};
 }
 
-struct Hypothesis {
-    Hypothesis(int last_char_id_, double weight_, std::shared_ptr<Hypothesis> prev_) :
-            last_char_id{last_char_id_}, weight{weight_}, prev{prev_} {}
 
-    int last_char_id;
-    double weight;
-    std::shared_ptr<Hypothesis> prev;
+using prefix_key_t = std::vector<int>;
+
+class Prefix {
+public:
+    Prefix() : prob_last_b{-INFINITY}, prob_last_nb{-INFINITY} {};
+
+    Prefix(double prob_last_b_, double prob_last_nb_) : prob_last_b{prob_last_b_}, prob_last_nb{prob_last_nb_} {}
+
+    double prob_last_b;
+    double prob_last_nb;
+
+    double get_full_prob() {
+        return log_sum_exp(prob_last_nb, prob_last_b);
+    }
 };
 
-using hyp_ptr_t = std::shared_ptr<Hypothesis>;
+std::string CTCDecoder::indices2str(const std::vector<int>& char_ids) {
+    std::string result;
+    result.reserve(char_ids.size());
+    if (!labels.empty()) {
+        for (const auto& char_id: char_ids)
+            result += labels[char_id];
+    }
+    return result;
+}
+
+std::string CTCDecoder::indices2str(const at::Tensor& char_ids, int len) {
+    std::string result;
+    result.reserve(len);
+    if (!labels.empty()) {
+        for (int i = 0; i < len; i++)
+            result += labels[char_ids[i].item<int>()];
+    }
+    return result;
+}
 
 std::tuple<std::vector<int>, int, std::string>
 CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
-    auto logits_a = logits_2d.accessor<float, 2>();
+    // Prefix beam search: https://arxiv.org/pdf/1408.2873.pdf
+    auto logits_a = logits_2d.accessor<float, 2>(); // TODO: convert to double?
     auto alphabet_size = static_cast<int>(logits_2d.size(1));
-    std::vector<hyp_ptr_t> hyps;
-    std::vector<hyp_ptr_t> new_hyps;
-    hyps.reserve(static_cast<size_t>(beam_width));
-    new_hyps.reserve(static_cast<size_t>(beam_width));
-    hyps.emplace_back(std::make_shared<Hypothesis>(blank_idx, 0.0, nullptr));
+
+    std::map<prefix_key_t, Prefix> prev_prefixes;
+    prev_prefixes[{blank_idx}] = {0, -INFINITY};
+    std::map<prefix_key_t, Prefix> next_prefixes;
+
     for (int l = 0; l < sequence_len; l++) {
         // generate new hypotheses
-        for (const auto& prev_hyp: hyps) {
+        next_prefixes.clear();
+        for (const auto& prev_prefix: prev_prefixes) {
+            auto& prefix_key = prev_prefix.first;
+            auto& prefix_weights = prev_prefix.second;
+            auto last_char_id = prefix_key[prefix_key.size() - 1];
             for (int char_id = 0; char_id < alphabet_size; char_id++) {
-                new_hyps.emplace_back(
-                        std::make_shared<Hypothesis>(char_id, prev_hyp->weight + logits_a[l][char_id], prev_hyp));
+                auto cur_log_prob = logits_a[l][char_id];
+                if (char_id == blank_idx) {
+                    auto score = cur_log_prob + log_sum_exp(prefix_weights.prob_last_b, prefix_weights.prob_last_nb);
+                    next_prefixes[prefix_key].prob_last_b = log_sum_exp(score, next_prefixes[prefix_key].prob_last_b);
+                } else {
+                    auto new_prefix_key = prefix_key;
+                    new_prefix_key.emplace_back(char_id);
+                    if (char_id == last_char_id) {
+                        next_prefixes[prefix_key].prob_last_nb = log_sum_exp(
+                                next_prefixes[prefix_key].prob_last_nb, cur_log_prob + prefix_weights.prob_last_b);
+                        next_prefixes[new_prefix_key].prob_last_nb = log_sum_exp(
+                                next_prefixes[new_prefix_key].prob_last_nb, cur_log_prob + prefix_weights.prob_last_b);
+                    } else {
+                        next_prefixes[new_prefix_key].prob_last_nb = log_sum_exp(
+                                next_prefixes[new_prefix_key].prob_last_nb,
+                                cur_log_prob + log_sum_exp(prefix_weights.prob_last_b, prefix_weights.prob_last_nb));
+                    }
+                }
             }
         }
-        std::sort(new_hyps.begin(), new_hyps.end(),
-                  [](const hyp_ptr_t& lhs, const hyp_ptr_t& rhs) { return lhs->weight > rhs->weight; });
-        if (new_hyps.size() <= beam_width)
-            std::swap(hyps, new_hyps);
-        else {
-            hyps.clear();
-            std::move(new_hyps.begin(), new_hyps.end(), std::back_inserter(hyps));
+        std::vector<prefix_key_t> next_prefixes_keys;
+        next_prefixes_keys.reserve(next_prefixes.size());
+        for (const auto& prefix: next_prefixes)
+            next_prefixes_keys.emplace_back(prefix.first);
+        if (next_prefixes.size() > beam_width) {
+            std::sort(next_prefixes_keys.begin(), next_prefixes_keys.end(),
+                      [&next_prefixes](const prefix_key_t& lhs, const prefix_key_t& rhs) {
+                          return next_prefixes.at(lhs).get_full_prob() > next_prefixes.at(rhs).get_full_prob();
+                      });
+            prev_prefixes.clear();
+            for (int i = 0; i < beam_width; i++)
+                prev_prefixes[next_prefixes_keys[i]] = next_prefixes[next_prefixes_keys[i]];
+        } else {
+            std::swap(prev_prefixes, next_prefixes);
         }
-        new_hyps.clear();
     }
 
-    std::vector<int> result_sequence_tmp;
-    std::vector<int> result_sequence;
-    std::string result_sequence_str;
-    int result_sequence_len = 0;
-    auto cur_hyp_element = hyps[0];
-    while (cur_hyp_element != nullptr) {
-        result_sequence_tmp.push_back(cur_hyp_element->last_char_id);
-        cur_hyp_element = cur_hyp_element->prev;
-    }
-    std::reverse(result_sequence_tmp.begin(), result_sequence_tmp.end());
-    auto prev_symbol = blank_idx;
-    for (const auto& current_symbol: result_sequence_tmp) {
-        if (current_symbol != blank_idx && prev_symbol != current_symbol) {
-            result_sequence.emplace_back(current_symbol);
-            if (!labels.empty())
-                result_sequence_str += labels[current_symbol];
-            result_sequence_len += 1;
-        }
-        prev_symbol = current_symbol;
-    }
-    return {result_sequence, result_sequence_len, result_sequence_str};
+    std::vector<prefix_key_t> prev_prefixes_keys;
+    prev_prefixes_keys.reserve(prev_prefixes_keys.size());
+    for (const auto& prefix: prev_prefixes)
+        prev_prefixes_keys.emplace_back(prefix.first);
+    std::sort(prev_prefixes_keys.begin(), prev_prefixes_keys.end(),
+              [&prev_prefixes](const prefix_key_t& lhs, const prefix_key_t& rhs) {
+                  return prev_prefixes.at(lhs).get_full_prob() > prev_prefixes.at(rhs).get_full_prob();
+              });
+
+    std::vector<int> result_sequence{prev_prefixes_keys[0].begin() + 1, prev_prefixes_keys[0].end()};
+    std::string result_sequence_str = indices2str(result_sequence);
+
+    return {result_sequence, static_cast<int>(result_sequence.size()), result_sequence_str};
 }
 
 std::tuple<
@@ -184,17 +230,15 @@ std::tuple<
     for (int i = 0; i < batch_size; i++) {
         auto prev_symbol = blank_idx;
         auto current_len = 0;
-        decoded_sentences.emplace_back("");
         for (int j = 0; j < logits_lengths[i].item<int>(); j++) {
             const auto current_symbol = argmax_logits[i][j].item<int>();
             if (current_symbol != blank_idx && prev_symbol != current_symbol) {
                 decoded_targets[i][current_len] = current_symbol;
-                if (!labels.empty())
-                    decoded_sentences[i] += labels[current_symbol];
                 current_len += 1;
             }
             prev_symbol = current_symbol;
         }
+        decoded_sentences.emplace_back(indices2str(decoded_targets[i], current_len));
         decoded_targets_lengths[i] = current_len;
     }
 

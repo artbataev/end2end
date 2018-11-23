@@ -27,6 +27,13 @@ add_library(threadpool
 target_link_libraries(threadpool
         ${CMAKE_THREAD_LIBS_INIT})
 
+add_library(inner_math_utils
+        pytorch_end2end/src/math_utils.cpp
+        pytorch_end2end/src/math_utils.h)
+target_link_libraries(inner_math_utils
+        PRIVATE pybind11::module
+        PRIVATE ${TORCH_LIBRARIES})
+
 add_library(cpp_ctc_decoder MODULE
         pytorch_end2end/src/ctc_decoder.cpp
         pytorch_end2end/src/ctc_decoder.h)
@@ -38,6 +45,7 @@ add_library(cpp_ctc_loss MODULE
 
 target_link_libraries(cpp_ctc_decoder
         PRIVATE threadpool
+        PRIVATE inner_math_utils
         PRIVATE pybind11::module
         PRIVATE ${TORCH_LIBRARIES}
         PRIVATE kenlm
@@ -49,6 +57,7 @@ set_target_properties(cpp_ctc_decoder PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}
 
 target_link_libraries(cpp_ctc_loss
         PRIVATE threadpool
+        PRIVATE inner_math_utils
         PRIVATE pybind11::module
         PRIVATE ${TORCH_LIBRARIES}
         )

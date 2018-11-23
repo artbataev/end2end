@@ -41,6 +41,8 @@ private:
     word2index_t word2index;
 
     std::tuple<std::vector<int>, int, std::string> decode_sentence(const at::Tensor& logits_2d, int sequence_len);
+    std::string indices2str(const std::vector<int>& char_ids);
+    std::string indices2str(const at::Tensor& char_ids, int len);
 };
 
 
