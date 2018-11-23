@@ -2,8 +2,7 @@
 #include <string>
 #include <map>
 #include <algorithm>
-
-//#include <iostream>
+#include <iostream>
 
 // pytorch
 #include <torch/extension.h>
@@ -137,7 +136,7 @@ class Prefix {
 public:
     Prefix() : prob_last_b{-INFINITY}, prob_last_nb{-INFINITY} {};
 
-//    Prefix(double prob_last_b_, double prob_last_nb_) : prob_last_b{prob_last_b_}, prob_last_nb{prob_last_nb_} {}
+    Prefix(double prob_last_b_, double prob_last_nb_) : prob_last_b{prob_last_b_}, prob_last_nb{prob_last_nb_} {}
 
     double prob_last_b;
     double prob_last_nb;
