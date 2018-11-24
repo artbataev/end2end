@@ -9,6 +9,7 @@
 
 class ThreadPool {
 public:
+    explicit ThreadPool(size_t num_threads_);
     void add_task(const std::function<void()>& task);
 
     void configure_threads(size_t num_threads_);

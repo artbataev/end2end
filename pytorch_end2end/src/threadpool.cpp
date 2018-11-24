@@ -1,5 +1,9 @@
 #include "threadpool.h"
 
+ThreadPool::ThreadPool(size_t num_threads_): num_threads{num_threads_}, working{false} {
+    resume_work();
+}
+
 void ThreadPool::add_task(const std::function<void()>& task) {
     {
         std::lock_guard<std::mutex> guard{tasks_mutex};
