@@ -20,9 +20,10 @@
 ## Decoders
 - [x] CTC Greedy Decoder (C++, CPU)
 - [x] CTC Beam Search Decoder (C++, CPU)
-- [ ] CTC Beam Search Decoder with language model (C++, CPU)
+- [x] CTC Beam Search Decoder with language model (C++, CPU)
 
 ### Future:
+- [ ] Speedup CTC Beam Search Decoder
 - [ ] Gram-CTC Beam Search Decoder
 
 ## Requirements
