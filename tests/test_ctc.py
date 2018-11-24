@@ -36,7 +36,7 @@ class TestCTCLoss(unittest.TestCase):
             log_probs = F.log_softmax(probs, dim=-1)
         else:
             log_probs = probs
-        ctc_loss = CTCLoss(reduce=True, size_average=False, after_logsoftmax=True, blank_idx=blank_idx)
+        ctc_loss = CTCLoss(reduce=True, size_average=False, after_logsoftmax=True, time_major=True, blank_idx=blank_idx)
         log_probs = torch.Tensor(log_probs).requires_grad_()
         cost = ctc_loss(log_probs, targets, input_lengths, target_lengths)
         cost.backward()
