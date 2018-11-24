@@ -107,6 +107,7 @@ std::tuple<
     auto grads = torch::zeros_like(logits);
     grads.set_requires_grad(false);
     losses.set_requires_grad(false);
+
     std::vector<std::thread> threads;
     threads.reserve(static_cast<size_t>(batch_size));
     for (int i = 0; i < batch_size; i++) {
@@ -118,6 +119,7 @@ std::tuple<
     }
     for (auto& t: threads)
         t.join();
+
     return {losses, grads};
 }
 

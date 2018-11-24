@@ -92,12 +92,19 @@ std::tuple<
     std::vector<std::string> decoded_sentences{static_cast<size_t>(batch_size), ""};
     std::vector<std::vector<int>> decoded_indices_vec{static_cast<size_t>(batch_size), std::vector<int>{}};
 
-    int current_sequence_len = 0;
+    std::vector<std::thread> threads;
+    threads.reserve(static_cast<size_t>(batch_size));
     for (int i = 0; i < batch_size; i++) {
-        std::tie(decoded_indices_vec[i], current_sequence_len, decoded_sentences[i]) = decode_sentence(
-                logits[i], logits_lengths[i].item<int>());
-        decoded_targets_lengths[i] = current_sequence_len;
+        threads.emplace_back([this, &logits, &logits_lengths, i,
+                              &decoded_sentences, &decoded_indices_vec, &decoded_targets_lengths] {
+            int current_sequence_len = 0;
+            std::tie(decoded_indices_vec[i], current_sequence_len, decoded_sentences[i]) = decode_sentence(
+                    logits[i], logits_lengths[i].item<int>());
+            decoded_targets_lengths[i] = current_sequence_len;
+        });
     }
+    for (auto& t: threads)
+        t.join();
 
     auto max_sequence_len = decoded_targets_lengths.max().item<int64_t>();
     auto decoded_indices = at::zeros({batch_size, max_sequence_len}, logits_lengths.options());
@@ -246,20 +253,28 @@ std::tuple<
     auto decoded_targets_lengths = at::zeros_like(logits_lengths);
     std::vector<std::string> decoded_sentences(static_cast<size_t>(batch_size), "");
 
+    std::vector<std::thread> threads;
+    threads.reserve(static_cast<size_t>(batch_size));
     for (int i = 0; i < batch_size; i++) {
-        auto prev_symbol = blank_idx;
-        auto current_len = 0;
-        for (int j = 0; j < logits_lengths[i].item<int>(); j++) {
-            const auto current_symbol = argmax_logits[i][j].item<int>();
-            if (current_symbol != blank_idx && prev_symbol != current_symbol) {
-                decoded_targets[i][current_len] = current_symbol;
-                current_len++;
+        threads.emplace_back([this, &argmax_logits, &logits_lengths, i,
+                       &decoded_targets, &decoded_targets_lengths, &decoded_sentences] {
+            auto prev_symbol = blank_idx;
+            auto current_len = 0;
+            for (int j = 0; j < logits_lengths[i].item<int>(); j++) {
+                const auto current_symbol = argmax_logits[i][j].item<int>();
+                if (current_symbol != blank_idx && prev_symbol != current_symbol) {
+                    decoded_targets[i][current_len] = current_symbol;
+                    current_len++;
+                }
+                prev_symbol = current_symbol;
             }
-            prev_symbol = current_symbol;
-        }
-        decoded_sentences[i] = indices2str(decoded_targets[i], current_len);
-        decoded_targets_lengths[i] = current_len;
+            decoded_sentences[i] = indices2str(decoded_targets[i], current_len);
+            decoded_targets_lengths[i] = current_len;
+        });
     }
+    for (auto& t: threads)
+        t.join();
+
 
     return {decoded_targets,
             decoded_targets_lengths,
