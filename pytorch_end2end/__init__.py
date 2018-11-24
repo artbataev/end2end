@@ -1,4 +1,4 @@
-from .decoders.ctc_decoder import CTCBeamSearchDecoder
+from .decoders.ctc_decoder import CTCDecoder
 from .modules.ctc_loss import CTCLoss
 
-__all__ = ["CTCLoss", "CTCBeamSearchDecoder"]
+__all__ = ["CTCLoss", "CTCDecoder"]

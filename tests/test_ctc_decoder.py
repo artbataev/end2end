@@ -2,7 +2,7 @@ import unittest
 
 import torch
 import os
-from pytorch_end2end import CTCBeamSearchDecoder
+from pytorch_end2end import CTCDecoder
 
 
 class TestCTCDecoder(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestCTCDecoder(unittest.TestCase):
         correct_targets = torch.LongTensor([[4, 3]])
         correct_targets_lengths = torch.LongTensor([2])
         correct_sentences = ["dc", ]
-        decoder = CTCBeamSearchDecoder(beam_width=1, blank_idx=blank_idx, labels=labels, time_major=False)
+        decoder = CTCDecoder(beam_width=1, blank_idx=blank_idx, labels=labels, time_major=False)
         decoded_targets, decoded_targets_lengths, decoded_sentences = decoder.decode(logits,
                                                                                      logits_lengths=logits_lengths)
 
@@ -27,7 +27,7 @@ class TestCTCDecoder(unittest.TestCase):
     def test_simple_lm(self):
         blank_idx = 0
         labels = ["_", "a", "b", "c", "d"]
-        decoder = CTCBeamSearchDecoder(
+        decoder = CTCDecoder(
             beam_width=1, blank_idx=blank_idx,
             labels=labels, time_major=False,
             lm_path=os.path.join(os.path.dirname(__file__), "librispeech_data",
@@ -37,7 +37,7 @@ class TestCTCDecoder(unittest.TestCase):
         decoder.print_scores_for_sentence(["mother".upper(), "washed".upper(), "the".upper(), "frame".upper()])
         print("=" * 50)
         print("=" * 50)
-        decoder = CTCBeamSearchDecoder(
+        decoder = CTCDecoder(
             beam_width=1, blank_idx=blank_idx,
             labels=labels, time_major=False,
             lm_path=os.path.join(os.path.dirname(__file__), "librispeech_data",
@@ -53,7 +53,7 @@ class TestCTCDecoder(unittest.TestCase):
         :return:
         """
         labels = ["\'", ' ', 'a', 'b', 'c', 'd', '_']
-        decoder = CTCBeamSearchDecoder(beam_width=20, blank_idx=6, time_major=False, labels=labels)
+        decoder = CTCDecoder(beam_width=20, blank_idx=6, time_major=False, labels=labels)
         probs_seq1 = [
             [0.06390443, 0.21124858, 0.27323887, 0.06870235, 0.0361254, 0.18184413, 0.16493624],
             [0.03309247, 0.22866108, 0.24390638, 0.09699597, 0.31895462, 0.0094893, 0.06890021],

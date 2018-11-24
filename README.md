@@ -81,7 +81,7 @@ loss.backward()
 ### CTC Decoder
 ```python
 import torch
-from pytorch_end2end import CTCBeamSearchDecoder as CTCDecoder
+from pytorch_end2end import CTCDecoder
 
 batch_size = 4
 alphabet_size = 6

@@ -16,7 +16,7 @@ class CTCDecoderError(Exception):
     pass
 
 
-class CTCBeamSearchDecoder:
+class CTCDecoder:
     """
     Decoder class to perform CTC Beam Search
 
