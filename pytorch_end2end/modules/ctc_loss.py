@@ -6,7 +6,7 @@ from ..functions.ctc_loss import CTCLossFunction
 
 class CTCLoss(nn.Module):
     """
-    Criterion to compute CTC Loss as described in ``http://www.cs.toronto.edu/~graves/icml_2006.pdf``
+    Criterion to compute CTC Loss as described in `<http://www.cs.toronto.edu/~graves/icml_2006.pdf>`_
 
     :param size_average: if compute average loss (only if reduce is True)
     :param reduce: if compute mean or average loss (if None, returns full tensor of shape ``(batch_size,)``)
@@ -26,7 +26,7 @@ class CTCLoss(nn.Module):
 
     def forward(self, logits, targets, logits_lengths, targets_lengths):
         """
-        Compute CTC Loss
+        Computes CTC Loss
 
         :param logits: Float or Double Tensor (network output)
             of shape ``(sequence_length, batch_size, alphabet_size)`` if ``time_major`` is True,

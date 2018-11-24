@@ -17,7 +17,7 @@ class CTCDecoderError(Exception):
 
 class CTCDecoder:
     """
-    Decoder class to perform CTC Beam Search
+    Decoder class to perform CTC decoding
 
     :param beam_width: width of beam (number of stored hypotheses), default ``100``. \n
         If ``1``, decoder always perform greedy (argmax) decoding
@@ -57,7 +57,7 @@ class CTCDecoder:
 
     def decode(self, logits, logits_lengths=None):
         """
-        Perform decoding
+        Performs prefix beam search decoding as described in `<https://arxiv.org/abs/1408.2873>`_
 
         :param logits: tensor with neural network outputs after logsoftmax \n
             of shape ``(sequence_length, batch_size, alphabet_size)`` if ``time_major`` \n
@@ -97,7 +97,7 @@ class CTCDecoder:
 
     def decode_greedy(self, logits, logits_lengths=None):
         """
-        Perform greedy (argmax) decoding
+        Performs greedy (argmax) decoding
 
         :param logits: tensor with neural network outputs after logsoftmax \n
             of shape ``(sequence_length, batch_size, alphabet_size)`` if ``time_major`` \n
