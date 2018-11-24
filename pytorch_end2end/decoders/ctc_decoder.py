@@ -92,7 +92,7 @@ class CTCDecoder:
 
         return decoded_targets, decoded_targets_lengths, decoded_sentences
 
-    def print_scores_for_sentence(self, words):
+    def _print_scores_for_sentence(self, words):
         self._decoder.print_scores_for_sentence(words)
 
     def decode_greedy(self, logits, logits_lengths=None):
