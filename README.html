@@ -90,6 +90,11 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-install">How to install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-use">How to use</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ctc-loss">CTC Loss</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -183,8 +188,8 @@
 <div class="section" id="decoders">
 <span id="decoders"></span><h2>Decoders<a class="headerlink" href="#decoders" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>[ ] CTC Greedy Decoder (C++, CPU)</li>
-<li>[ ] CTC Beam Search Decoder (C++, CPU)</li>
+<li>[x] CTC Greedy Decoder (C++, CPU)</li>
+<li>[x] CTC Beam Search Decoder (C++, CPU)</li>
 <li>[ ] CTC Beam Search Decoder with language model (C++, CPU)</li>
 </ul>
 <div class="section" id="future">
@@ -201,6 +206,53 @@
 <li>numpy</li>
 <li>numba</li>
 </ul>
+</div>
+<div class="section" id="how-to-install">
+<span id="how-to-install"></span><h2>How to install<a class="headerlink" href="#how-to-install" title="Permalink to this headline">¶</a></h2>
+<ol>
+<li><p class="first">Install Pytorch 1.0 (now pre-release preview) from <a class="reference external" href="https://pytorch.org">pytorch.org</a>, e.g.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+</pre></div>
+</div>
+</li>
+<li><p class="first">Install tools to compile</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo add-apt-repository ppa:ubuntu-toolchain-r-test
+sudo apt-get install cmake libboost-all-dev
+</pre></div>
+</div>
+</li>
+<li><p class="first">Install the module</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install -v git+https://github.com/artbataev/end2end.git
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone --recursive https://github.com/artbataev/end2end.git
+<span class="nb">cd</span> end2end
+python setup.py install
+python -m tests.test_ctc
+python -m tests.test_ctc_decoder
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="how-to-use">
+<span id="how-to-use"></span><h2>How to use<a class="headerlink" href="#how-to-use" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="ctc-loss">
+<span id="ctc-loss"></span><h3>CTC Loss<a class="headerlink" href="#ctc-loss" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">pytorch_end2end</span> <span class="kn">import</span> <span class="n">CTCLoss</span>
+<span class="n">ctc_loss</span> <span class="o">=</span> <span class="n">CTCLoss</span><span class="p">(</span><span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="nb">reduce</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">size_average</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">after_logsoftmax</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">batch_size</span><span class="p">,</span> <span class="n">alphabet_size</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">27</span>
+<span class="n">log_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">50</span> <span class="p">,</span><span class="n">alphabet_size</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">()</span>
+<span class="n">targets</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">alphabet_size</span><span class="p">,</span> <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+<span class="n">input_lengths</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,),</span> <span class="mi">50</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+<span class="n">target_lengths</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">30</span><span class="p">,(</span><span class="n">batch_size</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+<span class="n">loss</span> <span class="o">=</span> <span class="n">ctc_loss</span><span class="p">(</span><span class="n">log_probs</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">input_lengths</span><span class="p">,</span> <span class="n">target_lengths</span><span class="p">)</span>
+<span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
 </div>
 </div>
 
