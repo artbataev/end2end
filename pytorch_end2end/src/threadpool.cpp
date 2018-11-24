@@ -1,64 +1,43 @@
 #include "threadpool.h"
 
-ThreadPool::ThreadPool(size_t num_threads_): num_threads{num_threads_}, working{false} {
-    resume_work();
+ThreadPool::ThreadPool(size_t num_threads_) : num_threads{num_threads_}, working{true} {
+    pool.reserve(num_threads);
+    for (int _ = 0; _ < num_threads; _++) {
+        pool.emplace_back(std::thread([&] {
+            task_runner();
+        }));
+    }
 }
 
-void ThreadPool::add_task(const std::function<void()>& task) {
+void ThreadPool::add_task(std::function<void()>&& task) {
     {
         std::lock_guard<std::mutex> guard{tasks_mutex};
-        tasks.push(task);
+        tasks.emplace(task);
     }
     tasks_condition.notify_one();
 }
 
-void ThreadPool::configure_threads(size_t num_threads_) {
-    suspend_work();
-    num_threads = num_threads_;
-    resume_work();
-}
-
-void ThreadPool::suspend_work() {
-    if (working) {
-        working = false;
-        tasks_condition.notify_all();
-        for (auto& t: pool)
-            if (t.joinable())
-                t.join();
-    }
-    pool.resize(0);
-}
-
-void ThreadPool::resume_work() {
-    if (!working) {
-        for (int _ = 0; _ < num_threads; _++) {
-            pool.emplace_back(std::thread([&] {
-                this->task_runner(tasks_mutex, tasks_condition, tasks);
-            }));
-        }
-        working = true;
-    }
-}
 
 ThreadPool::~ThreadPool() {
-   suspend_work();
+    {
+        std::lock_guard<std::mutex> guard{tasks_mutex};
+        working = false;
+    }
+    tasks_condition.notify_all();
+    for (auto& t: pool)
+        t.join();
 }
 
-void ThreadPool::task_runner(std::mutex& tasks_mutex,
-                             std::condition_variable& condition,
-                             std::queue<std::function<void()>>& tasks) {
+void ThreadPool::task_runner() {
     while (true) {
         std::function<void()> task;
         {
             std::unique_lock<std::mutex> lock{tasks_mutex};
-            while (working && tasks.empty())
-                condition.wait(lock);
-            if (!tasks.empty()) {
-                task = tasks.front();
-                tasks.pop();
-            } else if (!working) {
+            tasks_condition.wait(lock, [&] { return !working || !tasks.empty(); });
+            if (!working && tasks.empty())
                 return;
-            }
+            task = std::move(tasks.front());
+            tasks.pop();
         }
         task();
     }

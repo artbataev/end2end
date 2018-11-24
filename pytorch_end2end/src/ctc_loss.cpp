@@ -5,6 +5,7 @@
 #include <thread>
 #include <vector>
 #include "math_utils.h"
+#include "threadpool.h"
 
 CTCLossWrapper::CTCLossWrapper(int blank_idx_) : blank_idx{blank_idx_} {}
 
@@ -108,17 +109,16 @@ std::tuple<
     grads.set_requires_grad(false);
     losses.set_requires_grad(false);
 
-    std::vector<std::thread> threads;
-    threads.reserve(static_cast<size_t>(batch_size));
-    for (int i = 0; i < batch_size; i++) {
-        threads.emplace_back([this, &logits, &targets, i, &logits_lengths, &targets_lengths, &losses, &grads] {
-            _ctc_loss_forward_2d(logits, targets,
-                                 logits_lengths[i].item<int>(), targets_lengths[i].item<int>(),
-                                 i, losses, grads);
-        });
+    {
+        ThreadPool pool{static_cast<size_t>(batch_size)};
+        for (int i = 0; i < batch_size; i++) {
+            pool.add_task([this, &logits, &targets, i, &logits_lengths, &targets_lengths, &losses, &grads] {
+                _ctc_loss_forward_2d(logits, targets,
+                                     logits_lengths[i].item<int>(), targets_lengths[i].item<int>(),
+                                     i, losses, grads);
+            });
+        }
     }
-    for (auto& t: threads)
-        t.join();
 
     return {losses, grads};
 }
