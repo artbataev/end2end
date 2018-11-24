@@ -163,7 +163,7 @@
     <span class="k">pass</span>
 
 
-<div class="viewcode-block" id="CTCBeamSearchDecoder"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCBeamSearchDecoder">[docs]</a><span class="k">class</span> <span class="nc">CTCBeamSearchDecoder</span><span class="p">:</span>
+<div class="viewcode-block" id="CTCDecoder"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCDecoder">[docs]</a><span class="k">class</span> <span class="nc">CTCDecoder</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Decoder class to perform CTC Beam Search</span>
 
@@ -203,7 +203,7 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lm_path</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="n">CTCDecoderError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t find a model: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lm_path</span><span class="p">))</span>
 
-<div class="viewcode-block" id="CTCBeamSearchDecoder.decode"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCBeamSearchDecoder.decode">[docs]</a>    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="CTCDecoder.decode"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCDecoder.decode">[docs]</a>    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Perform decoding</span>
 
@@ -240,10 +240,10 @@
 
         <span class="k">return</span> <span class="n">decoded_targets</span><span class="p">,</span> <span class="n">decoded_targets_lengths</span><span class="p">,</span> <span class="n">decoded_sentences</span></div>
 
-<div class="viewcode-block" id="CTCBeamSearchDecoder.print_scores_for_sentence"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCBeamSearchDecoder.print_scores_for_sentence">[docs]</a>    <span class="k">def</span> <span class="nf">print_scores_for_sentence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">words</span><span class="p">):</span>
+<div class="viewcode-block" id="CTCDecoder.print_scores_for_sentence"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCDecoder.print_scores_for_sentence">[docs]</a>    <span class="k">def</span> <span class="nf">print_scores_for_sentence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">words</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span><span class="o">.</span><span class="n">print_scores_for_sentence</span><span class="p">(</span><span class="n">words</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="CTCBeamSearchDecoder.decode_greedy"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCBeamSearchDecoder.decode_greedy">[docs]</a>    <span class="k">def</span> <span class="nf">decode_greedy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="CTCDecoder.decode_greedy"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCDecoder.decode_greedy">[docs]</a>    <span class="k">def</span> <span class="nf">decode_greedy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Perform greedy (argmax) decoding</span>
 

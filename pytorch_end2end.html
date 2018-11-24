@@ -199,8 +199,8 @@
 </dd></dl>
 
 <dl class="class">
-<dt id="pytorch_end2end.CTCBeamSearchDecoder">
-<em class="property">class </em><code class="descclassname">pytorch_end2end.</code><code class="descname">CTCBeamSearchDecoder</code><span class="sig-paren">(</span><em>beam_width=100</em>, <em>blank_idx=0</em>, <em>time_major=True</em>, <em>labels=None</em>, <em>lm_path=None</em>, <em>alpha=1.0</em>, <em>beta=1.0</em>, <em>case_sensitive=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCBeamSearchDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCBeamSearchDecoder" title="Permalink to this definition">¶</a></dt>
+<dt id="pytorch_end2end.CTCDecoder">
+<em class="property">class </em><code class="descclassname">pytorch_end2end.</code><code class="descname">CTCDecoder</code><span class="sig-paren">(</span><em>beam_width=100</em>, <em>blank_idx=0</em>, <em>time_major=True</em>, <em>labels=None</em>, <em>lm_path=None</em>, <em>alpha=1.0</em>, <em>beta=1.0</em>, <em>case_sensitive=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decoder class to perform CTC Beam Search</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -223,8 +223,8 @@
 </tbody>
 </table>
 <dl class="method">
-<dt id="pytorch_end2end.CTCBeamSearchDecoder.decode">
-<code class="descname">decode</code><span class="sig-paren">(</span><em>logits</em>, <em>logits_lengths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCBeamSearchDecoder.decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCBeamSearchDecoder.decode" title="Permalink to this definition">¶</a></dt>
+<dt id="pytorch_end2end.CTCDecoder.decode">
+<code class="descname">decode</code><span class="sig-paren">(</span><em>logits</em>, <em>logits_lengths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder.decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder.decode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform decoding</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -261,8 +261,8 @@ If <code class="docutils literal notranslate"><span class="pre">labels</span> <s
 </dd></dl>
 
 <dl class="method">
-<dt id="pytorch_end2end.CTCBeamSearchDecoder.decode_greedy">
-<code class="descname">decode_greedy</code><span class="sig-paren">(</span><em>logits</em>, <em>logits_lengths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCBeamSearchDecoder.decode_greedy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCBeamSearchDecoder.decode_greedy" title="Permalink to this definition">¶</a></dt>
+<dt id="pytorch_end2end.CTCDecoder.decode_greedy">
+<code class="descname">decode_greedy</code><span class="sig-paren">(</span><em>logits</em>, <em>logits_lengths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder.decode_greedy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder.decode_greedy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform greedy (argmax) decoding</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -299,8 +299,8 @@ If <code class="docutils literal notranslate"><span class="pre">labels</span> <s
 </dd></dl>
 
 <dl class="method">
-<dt id="pytorch_end2end.CTCBeamSearchDecoder.print_scores_for_sentence">
-<code class="descname">print_scores_for_sentence</code><span class="sig-paren">(</span><em>words</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCBeamSearchDecoder.print_scores_for_sentence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCBeamSearchDecoder.print_scores_for_sentence" title="Permalink to this definition">¶</a></dt>
+<dt id="pytorch_end2end.CTCDecoder.print_scores_for_sentence">
+<code class="descname">print_scores_for_sentence</code><span class="sig-paren">(</span><em>words</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder.print_scores_for_sentence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder.print_scores_for_sentence" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
