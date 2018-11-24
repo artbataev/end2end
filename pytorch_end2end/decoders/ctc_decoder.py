@@ -4,13 +4,9 @@ import torch
 
 import sys
 
-module_base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-
-build_path = os.path.join(module_base, "cmake-build-debug")
-build_path2 = os.path.join(module_base, "build")
-if os.path.exists(build_path2):
-    sys.path.append(build_path2)
-else:
+if "DEBUG" in os.environ:
+    module_base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    build_path = os.path.join(module_base, "cmake-build-debug")
     sys.path.append(build_path)
 
 import cpp_ctc_decoder
@@ -22,18 +18,19 @@ class CTCDecoderError(Exception):
 
 class CTCBeamSearchDecoder:
     """
-        Decoder class to perform CTC Beam Search
+    Decoder class to perform CTC Beam Search
 
-        :param beam_width: width of beam (number of stored hypotheses), default ``100``. \n
-            If ``1``, decoder always perform greedy (argmax) decoding
-        :param blank_idx: id of blank label, default ``0``
-        :param time_major: if logits are time major (else batch major)
-        :param labels: list of strings with labels (including blank symbol), e.g. ``["_", "a", "b", "c"]``
-        :param lm_path: path to language model (ARPA format or gzipped ARPA)
-        :param alpha: acoustic (original network) model weight, makes sense only if language model is present
-        :param beta: language model weight
-        :param case_sensitive: obtain language model scores with respect to case, default ``False``
-        """
+    :param beam_width: width of beam (number of stored hypotheses), default ``100``. \n
+        If ``1``, decoder always perform greedy (argmax) decoding
+    :param blank_idx: id of blank label, default ``0``
+    :param time_major: if logits are time major (else batch major)
+    :param labels: list of strings with labels (including blank symbol), e.g. ``["_", "a", "b", "c"]``
+    :param lm_path: path to language model (ARPA format or gzipped ARPA)
+    :param alpha: acoustic (original network) model weight, makes sense only if language model is present
+    :param beta: language model weight
+    :param case_sensitive: obtain language model scores with respect to case, default ``False``
+    """
+
     def __init__(self, beam_width=100, blank_idx=0, time_major=True, labels=None,
                  lm_path=None, alpha=1.0, beta=1.0,
                  case_sensitive=False):

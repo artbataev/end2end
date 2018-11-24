@@ -253,7 +253,7 @@ std::tuple<
             const auto current_symbol = argmax_logits[i][j].item<int>();
             if (current_symbol != blank_idx && prev_symbol != current_symbol) {
                 decoded_targets[i][current_len] = current_symbol;
-                current_len += 1;
+                current_len++;
             }
             prev_symbol = current_symbol;
         }

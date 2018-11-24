@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <unordered_map>
 #include <torch/extension.h>
 #include "lm/model.hh"
 
