@@ -155,13 +155,15 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Criterion to compute CTC Loss as described in ``http://www.cs.toronto.edu/~graves/icml_2006.pdf``</span>
 
-<span class="sd">    :param size_average:</span>
-<span class="sd">    :param reduce:</span>
-<span class="sd">    :param after_logsoftmax:</span>
+<span class="sd">    :param size_average: if compute average loss (only if reduce is True)</span>
+<span class="sd">    :param reduce: if compute mean or average loss (if None, returns full tensor of shape ``(batch_size,)``)</span>
+<span class="sd">    :param after_logsoftmax: if logsoftmax is used before passing neural network outputs \n</span>
+<span class="sd">        (else takes pure network outputs)</span>
 <span class="sd">    :param time_major: if logits are time major (or batch major), default ``True``</span>
 <span class="sd">    :param blank_idx: id of blank label, default ``0``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size_average</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">after_logsoftmax</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size_average</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">after_logsoftmax</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">CTCLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_blank_index</span> <span class="o">=</span> <span class="n">blank_idx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reduce</span> <span class="o">=</span> <span class="n">reduce</span>
@@ -173,10 +175,12 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute CTC Loss</span>
 
-<span class="sd">        :param logits:</span>
-<span class="sd">        :param targets:</span>
-<span class="sd">        :param logits_lengths:</span>
-<span class="sd">        :param targets_lengths:</span>
+<span class="sd">        :param logits: Float or Double Tensor (network output)</span>
+<span class="sd">            of shape ``(sequence_length, batch_size, alphabet_size)`` if ``time_major`` is True,</span>
+<span class="sd">            else of shape ``(batch_size, sequence_length, alphabet_size)``</span>
+<span class="sd">        :param targets: Tensor with targets of shape ``(batch_size, targets_sequence_length)``</span>
+<span class="sd">        :param logits_lengths: Tensor of shape ``(batch_size,)`` with lengths of sequences</span>
+<span class="sd">        :param targets_lengths: Tensor of shape ``(batch_size,)`` with lengths of target sequences</span>
 <span class="sd">        :return: tensor with CTC loss of shape ``(batch_size,)`` if ``reduce is None`` else of shape ``(1,)``</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_after_logsoftmax</span><span class="p">:</span>
@@ -189,7 +193,7 @@
         <span class="c1"># shape of logits_logsoftmax now: batch_size, sequence_length, alphabet_size</span>
 
         <span class="n">loss</span> <span class="o">=</span> <span class="n">CTCLossFunction</span><span class="p">()</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">logits_logsoftmax</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="p">,</span> <span class="n">targets_lengths</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_blank_index</span><span class="p">)</span>
-        
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reduce</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size_average</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">loss</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
