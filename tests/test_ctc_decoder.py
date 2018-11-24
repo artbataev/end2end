@@ -2,6 +2,7 @@ import unittest
 
 import torch
 import os
+import numpy as np
 from pytorch_end2end import CTCDecoder
 
 
@@ -23,7 +24,7 @@ class TestCTCDecoder(unittest.TestCase):
         self.assertListEqual(decoded_targets.numpy().tolist(), correct_targets.numpy().tolist())
         self.assertListEqual(decoded_sentences, correct_sentences)
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_simple_lm(self):
         blank_idx = 0
         labels = ["_", "a", "b", "c", "d"]
@@ -88,6 +89,19 @@ class TestCTCDecoder(unittest.TestCase):
         # loss = criterion(log_probs, torch.LongTensor([[2, 4, 5, 4], [3, 0, 2, 0]]),
         #                  torch.LongTensor([6, 6]), torch.LongTensor([4, 3]))
         # print(loss)
+
+    def test_random_with_lm(self):
+        blank_idx = 0
+        import string
+        labels = ["_"] + list(string.ascii_lowercase) + [" "]
+        logits = torch.FloatTensor(np.random.rand(1, 30, len(labels)))
+        decoder = CTCDecoder(
+            beam_width=20, blank_idx=blank_idx,
+            labels=labels, time_major=False,
+            lm_path=os.path.join(os.path.dirname(__file__), "librispeech_data",
+                                 "librispeech_3-gram_pruned.3e-7.arpa.gz"), alpha=1.0)
+        _, _, beam_search_result = decoder.decode(logits)
+        print(beam_search_result)
 
 
 

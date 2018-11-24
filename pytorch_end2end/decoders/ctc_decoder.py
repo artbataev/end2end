@@ -25,8 +25,7 @@ class CTCDecoder:
     :param time_major: if logits are time major (else batch major)
     :param labels: list of strings with labels (including blank symbol), e.g. ``["_", "a", "b", "c"]``
     :param lm_path: path to language model (ARPA format or gzipped ARPA)
-    :param alpha: acoustic (original network) model weight, makes sense only if language model is present
-    :param beta: language model weight
+    :param alpha: language model weight, default ``1.0``, makes sense only if language model is present
     :param case_sensitive: obtain language model scores with respect to case, default ``False``
     """
 
@@ -38,14 +37,13 @@ class CTCDecoder:
         self._labels = labels or []
         self._lm_path = os.path.abspath(lm_path) if lm_path else ""
         self._alpha = alpha
-        self._beta = beta
         self._time_major = time_major
         self._case_sensitive = case_sensitive
 
         self._check_params()
 
         self._decoder = cpp_ctc_decoder.CTCDecoder(self._blank_idx, self._beam_width,
-                                                   self._labels, self._lm_path, self._case_sensitive)
+                                                   self._labels, self._lm_path, self._case_sensitive, self._alpha)
 
     def _check_params(self):
         # TODO: Check all params

@@ -40,10 +40,17 @@ std::string str_to_lower(const std::string& str) {
 
 CTCDecoder::CTCDecoder(int blank_idx_, int beam_width_ = 100,
                        std::vector<std::string> labels_ = {},
-                       const std::string& lm_path = "", bool case_sensitive_ = false) :
+                       const std::string& lm_path = "", bool case_sensitive_ = false, double lmwt_ = 1.0) :
         blank_idx(blank_idx_),
         beam_width{beam_width_},
+        space_idx{-1},
+        lmwt{lmwt_},
         labels(std::move(labels_)), case_sensitive(case_sensitive_) {
+    if (!labels.empty()) {
+        space_idx = static_cast<int>(std::distance(labels.begin(), std::find(labels.begin(), labels.end(), " ")));
+        if (space_idx >= labels.size())
+            space_idx = -1;
+    }
     if (!lm_path.empty()) {
         auto enumerate_vocab = new CustomEnumerateVocab{};
         lm::ngram::Config config;
@@ -71,10 +78,26 @@ lm::WordIndex CTCDecoder::get_idx(const std::string& word) {
     return lm_model->GetVocabulary().NotFound();
 }
 
+double CTCDecoder::get_score_for_sentence(std::vector<std::string> words) {
+    if (lm_model == nullptr)
+        return 0;
+    double result = 1.0;
+    lm_state_t state(lm_model->BeginSentenceState()), out_state;
+    for (const auto& word: words) {
+        result = lm_model->Score(state, get_idx(word), out_state);
+        state = out_state;
+    }
+//    for(const auto& word: words) {
+//        std::cout << word << " ";
+//    }
+//    std::cout << "| " << result << "\n";
+    return result;
+}
+
 void CTCDecoder::print_scores_for_sentence(std::vector<std::string> words) {
     if (lm_model == nullptr)
         return;
-    lm_state state(lm_model->BeginSentenceState()), out_state;
+    lm_state_t state(lm_model->BeginSentenceState()), out_state;
     for (const auto& word: words) {
         std::cout << word << " " << get_idx(word) << " " << lm_model->GetVocabulary().Index(word) << " "
                   << lm_model->Score(state, get_idx(word), out_state) << "\n";
@@ -98,7 +121,7 @@ std::tuple<
         ThreadPool pool{static_cast<size_t>(batch_size)};
         for (int i = 0; i < batch_size; i++) {
             pool.add_task([this, &logits, &logits_lengths, i,
-                                   &decoded_sentences, &decoded_indices_vec, &decoded_targets_lengths] {
+                                  &decoded_sentences, &decoded_indices_vec, &decoded_targets_lengths] {
                 int current_sequence_len = 0;
                 std::tie(decoded_indices_vec[i], current_sequence_len, decoded_sentences[i]) = decode_sentence(
                         logits[i], logits_lengths[i].item<int>());
@@ -142,15 +165,17 @@ using prefix_key_t = std::vector<int>;
 
 class Prefix {
 public:
-    Prefix() : prob_last_b{-INFINITY}, prob_last_nb{-INFINITY} {};
+    Prefix() : prob_last_b{-INFINITY}, prob_last_nb{-INFINITY}, lm_weight{0} {};
 
     Prefix(double prob_last_b_, double prob_last_nb_) : prob_last_b{prob_last_b_}, prob_last_nb{prob_last_nb_} {}
 
     double prob_last_b;
     double prob_last_nb;
+    double lm_weight;
+
 
     double get_full_prob() {
-        return log_sum_exp(prob_last_nb, prob_last_b);
+        return log_sum_exp(prob_last_nb, prob_last_b) + lm_weight;
     }
 };
 
@@ -178,6 +203,9 @@ CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
                     next_prefixes[prefix_key].prob_last_b = log_sum_exp(
                             next_prefixes[prefix_key].prob_last_b,
                             cur_log_prob + log_sum_exp(prefix_weights.prob_last_b, prefix_weights.prob_last_nb));
+
+                    // lm weight
+                    next_prefixes[prefix_key].lm_weight = prefix_weights.lm_weight;
                 } else {
                     auto new_prefix_key{prefix_key};
                     new_prefix_key.emplace_back(char_id);
@@ -186,10 +214,38 @@ CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
                                 next_prefixes[prefix_key].prob_last_nb, cur_log_prob + prefix_weights.prob_last_b);
                         next_prefixes[new_prefix_key].prob_last_nb = log_sum_exp(
                                 next_prefixes[new_prefix_key].prob_last_nb, cur_log_prob + prefix_weights.prob_last_b);
+
+                        // lm weight
+                        next_prefixes.at(prefix_key).lm_weight = prefix_weights.lm_weight;
+                        next_prefixes.at(new_prefix_key).lm_weight = prefix_weights.lm_weight;
                     } else {
                         next_prefixes[new_prefix_key].prob_last_nb = log_sum_exp(
                                 next_prefixes[new_prefix_key].prob_last_nb,
                                 cur_log_prob + log_sum_exp(prefix_weights.prob_last_b, prefix_weights.prob_last_nb));
+
+                        // lm weight
+                        if (lm_model != nullptr && (char_id == space_idx || l == sequence_len - 1)) {
+                            std::vector<std::string> words;
+                            std::string word;
+                            for(const auto& c_id: new_prefix_key) {
+                                if (c_id == blank_idx) // first
+                                    continue;
+                                if(c_id != space_idx)
+                                    word += labels[c_id];
+                                else if (!word.empty()) {
+                                    words.emplace_back(word);
+                                    word = "";
+                                }
+                            }
+                            if (!word.empty())
+                                words.emplace_back(word);
+                            if(!words.empty())
+                                next_prefixes[new_prefix_key].lm_weight = get_score_for_sentence(words);
+                            else
+                                next_prefixes[new_prefix_key].lm_weight = prefix_weights.lm_weight;
+                        } else {
+                            next_prefixes[new_prefix_key].lm_weight = prefix_weights.lm_weight;
+                        }
                     }
                     if (next_prefixes.at(new_prefix_key).prob_last_b == -INFINITY &&
                         prev_prefixes.count(new_prefix_key) > 0)
@@ -258,7 +314,7 @@ std::tuple<
         ThreadPool pool{static_cast<size_t>(batch_size)};
         for (int i = 0; i < batch_size; i++) {
             pool.add_task([this, &argmax_logits, &logits_lengths, i,
-                                         &decoded_targets, &decoded_targets_lengths, &decoded_sentences] {
+                                  &decoded_targets, &decoded_targets_lengths, &decoded_sentences] {
                 auto prev_symbol = blank_idx;
                 auto current_len = 0;
                 for (int j = 0; j < logits_lengths[i].item<int>(); j++) {
