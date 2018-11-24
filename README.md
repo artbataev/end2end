@@ -26,6 +26,7 @@
 - [ ] Gram-CTC Beam Search Decoder
 
 ## Requirements
+- Python 3.4+
 - Pytorch 1.0 and higher
 - numpy
 - numba
@@ -61,12 +62,34 @@
 ```python
 import torch
 from pytorch_end2end import CTCLoss
+
 ctc_loss = CTCLoss(blank_idx=0, time_major=False, reduce=True, size_average=True, after_logsoftmax=False)
-batch_size, alphabet_size = 2, 27
-log_probs = torch.randn(batch_size, 50 ,alphabet_size).detach().requires_grad_()
+
+batch_size = 4
+alphabet_size = 28 # blank + 26 english characters + space
+
+logits = torch.randn(batch_size, 50 ,alphabet_size).detach().requires_grad_()
 targets = torch.randint(1, alphabet_size, (batch_size, 30), dtype=torch.long)
-input_lengths = torch.full((batch_size,), 50, dtype=torch.long)
-target_lengths = torch.randint(10,30,(batch_size,), dtype=torch.long)
-loss = ctc_loss(log_probs, targets, input_lengths, target_lengths)
+logits_lengths = torch.full((batch_size,), 50, dtype=torch.long)
+targets_lengths = torch.randint(10, 30, (batch_size,), dtype=torch.long)
+
+loss = ctc_loss(logits, targets, logits_lengths, targets_lengths)
 loss.backward()
+```
+
+### CTC Decoder
+```python
+import torch
+from pytorch_end2end import CTCBeamSearchDecoder as CTCDecoder
+
+batch_size = 4
+alphabet_size = 6
+decoder = CTCDecoder(blank_idx=0, beam_width=100, time_major=False, labels=["_", "a", "b", "c", "d", " "])
+
+logits = torch.randn(batch_size, 50 ,alphabet_size).detach().requires_grad_()
+logits_lengths = torch.full((batch_size,), 50, dtype=torch.long)
+
+decoded_targets, decoded_targets_lengths, decoded_sentences = decoder.decode(logits, logits_lengths)
+for sentence in decoded_sentences:
+    print(sentence)
 ```
