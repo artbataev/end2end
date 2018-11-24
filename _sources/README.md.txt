@@ -69,7 +69,7 @@ ctc_loss = CTCLoss(blank_idx=0, time_major=False,
 batch_size = 4
 alphabet_size = 28 # blank + 26 english characters + space
 
-logits = torch.randn(batch_size, 50 ,alphabet_size).detach().requires_grad_()
+logits = torch.randn(batch_size, 50, alphabet_size).detach().requires_grad_()
 targets = torch.randint(1, alphabet_size, (batch_size, 30), dtype=torch.long)
 logits_lengths = torch.full((batch_size,), 50, dtype=torch.long)
 targets_lengths = torch.randint(10, 30, (batch_size,), dtype=torch.long)
@@ -88,7 +88,7 @@ alphabet_size = 6
 decoder = CTCDecoder(blank_idx=0, beam_width=100, time_major=False, 
     labels=["_", "a", "b", "c", "d", " "])
 
-logits = torch.randn(batch_size, 50 ,alphabet_size).detach().requires_grad_()
+logits = torch.randn(batch_size, 50, alphabet_size).detach().requires_grad_()
 logits_lengths = torch.full((batch_size,), 50, dtype=torch.long)
 
 decoded_targets, decoded_targets_lengths, decoded_sentences = decoder.decode(logits, logits_lengths)

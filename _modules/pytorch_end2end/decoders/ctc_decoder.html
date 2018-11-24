@@ -239,8 +239,8 @@
 
         <span class="k">return</span> <span class="n">decoded_targets</span><span class="p">,</span> <span class="n">decoded_targets_lengths</span><span class="p">,</span> <span class="n">decoded_sentences</span></div>
 
-<div class="viewcode-block" id="CTCDecoder.print_scores_for_sentence"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCDecoder.print_scores_for_sentence">[docs]</a>    <span class="k">def</span> <span class="nf">print_scores_for_sentence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">words</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span><span class="o">.</span><span class="n">print_scores_for_sentence</span><span class="p">(</span><span class="n">words</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="nf">_print_scores_for_sentence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">words</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span><span class="o">.</span><span class="n">print_scores_for_sentence</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
 
 <div class="viewcode-block" id="CTCDecoder.decode_greedy"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCDecoder.decode_greedy">[docs]</a>    <span class="k">def</span> <span class="nf">decode_greedy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
