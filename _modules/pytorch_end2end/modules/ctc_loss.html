@@ -153,7 +153,7 @@
 
 <div class="viewcode-block" id="CTCLoss"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCLoss">[docs]</a><span class="k">class</span> <span class="nc">CTCLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Criterion to compute CTC Loss as described in ``http://www.cs.toronto.edu/~graves/icml_2006.pdf``</span>
+<span class="sd">    Criterion to compute CTC Loss as described in `&lt;http://www.cs.toronto.edu/~graves/icml_2006.pdf&gt;`_</span>
 
 <span class="sd">    :param size_average: if compute average loss (only if reduce is True)</span>
 <span class="sd">    :param reduce: if compute mean or average loss (if None, returns full tensor of shape ``(batch_size,)``)</span>
@@ -173,7 +173,7 @@
 
 <div class="viewcode-block" id="CTCLoss.forward"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCLoss.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="p">,</span> <span class="n">targets_lengths</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute CTC Loss</span>
+<span class="sd">        Computes CTC Loss</span>
 
 <span class="sd">        :param logits: Float or Double Tensor (network output)</span>
 <span class="sd">            of shape ``(sequence_length, batch_size, alphabet_size)`` if ``time_major`` is True,</span>

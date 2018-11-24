@@ -164,7 +164,7 @@
 
 <div class="viewcode-block" id="CTCDecoder"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCDecoder">[docs]</a><span class="k">class</span> <span class="nc">CTCDecoder</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Decoder class to perform CTC Beam Search</span>
+<span class="sd">    Decoder class to perform CTC decoding</span>
 
 <span class="sd">    :param beam_width: width of beam (number of stored hypotheses), default ``100``. \n</span>
 <span class="sd">        If ``1``, decoder always perform greedy (argmax) decoding</span>
@@ -204,7 +204,7 @@
 
 <div class="viewcode-block" id="CTCDecoder.decode"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCDecoder.decode">[docs]</a>    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Perform decoding</span>
+<span class="sd">        Performs prefix beam search decoding as described in `&lt;https://arxiv.org/abs/1408.2873&gt;`_</span>
 
 <span class="sd">        :param logits: tensor with neural network outputs after logsoftmax \n</span>
 <span class="sd">            of shape ``(sequence_length, batch_size, alphabet_size)`` if ``time_major`` \n</span>
@@ -244,7 +244,7 @@
 
 <div class="viewcode-block" id="CTCDecoder.decode_greedy"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCDecoder.decode_greedy">[docs]</a>    <span class="k">def</span> <span class="nf">decode_greedy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Perform greedy (argmax) decoding</span>
+<span class="sd">        Performs greedy (argmax) decoding</span>
 
 <span class="sd">        :param logits: tensor with neural network outputs after logsoftmax \n</span>
 <span class="sd">            of shape ``(sequence_length, batch_size, alphabet_size)`` if ``time_major`` \n</span>
