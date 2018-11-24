@@ -63,7 +63,8 @@
 import torch
 from pytorch_end2end import CTCLoss
 
-ctc_loss = CTCLoss(blank_idx=0, time_major=False, reduce=True, size_average=True, after_logsoftmax=False)
+ctc_loss = CTCLoss(blank_idx=0, time_major=False, 
+    reduce=True, size_average=True, after_logsoftmax=False)
 
 batch_size = 4
 alphabet_size = 28 # blank + 26 english characters + space
@@ -84,7 +85,8 @@ from pytorch_end2end import CTCBeamSearchDecoder as CTCDecoder
 
 batch_size = 4
 alphabet_size = 6
-decoder = CTCDecoder(blank_idx=0, beam_width=100, time_major=False, labels=["_", "a", "b", "c", "d", " "])
+decoder = CTCDecoder(blank_idx=0, beam_width=100, time_major=False, 
+    labels=["_", "a", "b", "c", "d", " "])
 
 logits = torch.randn(batch_size, 50 ,alphabet_size).detach().requires_grad_()
 logits_lengths = torch.full((batch_size,), 50, dtype=torch.long)
