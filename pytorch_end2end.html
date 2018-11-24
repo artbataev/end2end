@@ -218,8 +218,7 @@ else of shape <code class="docutils literal notranslate"><span class="pre">(batc
 <li><strong>time_major</strong> – if logits are time major (else batch major)</li>
 <li><strong>labels</strong> – list of strings with labels (including blank symbol), e.g. <code class="docutils literal notranslate"><span class="pre">[&quot;_&quot;,</span> <span class="pre">&quot;a&quot;,</span> <span class="pre">&quot;b&quot;,</span> <span class="pre">&quot;c&quot;]</span></code></li>
 <li><strong>lm_path</strong> – path to language model (ARPA format or gzipped ARPA)</li>
-<li><strong>alpha</strong> – acoustic (original network) model weight, makes sense only if language model is present</li>
-<li><strong>beta</strong> – language model weight</li>
+<li><strong>alpha</strong> – language model weight, default <code class="docutils literal notranslate"><span class="pre">1.0</span></code>, makes sense only if language model is present</li>
 <li><strong>case_sensitive</strong> – obtain language model scores with respect to case, default <code class="docutils literal notranslate"><span class="pre">False</span></code></li>
 </ul>
 </td>
