@@ -1,8 +1,7 @@
 import os
+import sys
 
 import torch
-
-import sys
 
 if "DEBUG" in os.environ:
     module_base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -31,7 +30,7 @@ class CTCDecoder:
     :param case_sensitive: obtain language model scores with respect to case, default ``False``
     """
 
-    def __init__(self, beam_width=100, blank_idx=0, time_major=True, labels=None,
+    def __init__(self, beam_width=100, blank_idx=0, time_major=False, labels=None,
                  lm_path=None, alpha=1.0, beta=1.0,
                  case_sensitive=False):
         self._beam_width = beam_width

@@ -1,7 +1,7 @@
-from torch.autograd import Function
-
 import os
 import sys
+
+from torch.autograd import Function
 
 if "DEBUG" in os.environ:
     module_base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -20,7 +20,7 @@ class CTCLossFunction(Function):
         :param ctx: storage for inner computations (to use in backward method)
         :param logits: Float or Double Tensor of shape [batch_size, sequence_length, alphabet_size]
         :param targets: Tensor with targets of shape [batch_size, targets_sequence_length]
-        :param logits_lengths: Tensor of shape [batch_size] with lenghts of sequences
+        :param logits_lengths: Tensor of shape [batch_size] with lengths of sequences
         :param targets_lengths: Tensor of shape [batch_size] with lengths of target sequences
         :param blank_idx: id of blank label, default 0
         :return: tensor with loss of shape [batch_size]
