@@ -45,18 +45,19 @@ CTCDecoder::CTCDecoder(int blank_idx_, int beam_width_ = 100,
         beam_width{beam_width_},
         labels(std::move(labels_)), case_sensitive(case_sensitive_) {
     if (!lm_path.empty()) {
-        CustomEnumerateVocab enumerate_vocab;
+        auto enumerate_vocab = new CustomEnumerateVocab{};
         lm::ngram::Config config;
-        config.enumerate_vocab = &enumerate_vocab;
+        config.enumerate_vocab = enumerate_vocab;
         std::unique_ptr<lm::ngram::ProbingModel> lm_model_(
                 dynamic_cast<lm::ngram::ProbingModel *>(
                         lm::ngram::LoadVirtual(lm_path.c_str(), config, lm::ngram::PROBING)));
         lm_model = std::move(lm_model_);
         if (case_sensitive)
-            word2index = enumerate_vocab.get_word2index();
+            word2index = enumerate_vocab->get_word2index();
         else
-            for (const auto& elem: enumerate_vocab.get_word2index())
+            for (const auto& elem: enumerate_vocab->get_word2index())
                 word2index[str_to_lower(elem.first)] = elem.second;
+        delete enumerate_vocab;
     } else
         lm_model = nullptr;
 }
