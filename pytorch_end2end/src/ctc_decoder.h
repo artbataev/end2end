@@ -39,6 +39,7 @@ private:
     int beam_width;
     bool case_sensitive;
     double lmwt;
+    double oov_score;
     std::vector<std::string> labels;
     std::unique_ptr<lm::ngram::ProbingModel> lm_model;
     word2index_t word2index;
@@ -47,6 +48,8 @@ private:
     double get_score_for_sentence(std::vector<std::string> words);
     std::string indices2str(const std::vector<int>& char_ids);
     std::string indices2str(const at::Tensor& char_ids, int len);
+    bool is_empty_sentence(const std::vector<int>& sentence);
+    double get_score_for_sentence(const std::vector<int>& sentence);
 };
 
 

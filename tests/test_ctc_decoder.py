@@ -1,6 +1,7 @@
 import unittest
-
+import string
 import torch
+import torch.nn.functional as F
 import os
 import numpy as np
 from pytorch_end2end import CTCDecoder
@@ -24,7 +25,7 @@ class TestCTCDecoder(unittest.TestCase):
         self.assertListEqual(decoded_targets.numpy().tolist(), correct_targets.numpy().tolist())
         self.assertListEqual(decoded_sentences, correct_sentences)
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_simple_lm(self):
         blank_idx = 0
         labels = ["_", "a", "b", "c", "d"]
@@ -92,16 +93,17 @@ class TestCTCDecoder(unittest.TestCase):
 
     def test_random_with_lm(self):
         blank_idx = 0
-        import string
+        np.random.seed(534)
         labels = ["_"] + list(string.ascii_lowercase) + [" "]
-        logits = torch.FloatTensor(np.random.rand(1, 30, len(labels)))
+        logits = torch.FloatTensor(np.random.rand(1, 50, len(labels)))
         decoder = CTCDecoder(
-            beam_width=20, blank_idx=blank_idx,
+            beam_width=100, blank_idx=blank_idx,
             labels=labels, time_major=False,
             lm_path=os.path.join(os.path.dirname(__file__), "librispeech_data",
                                  "librispeech_3-gram_pruned.3e-7.arpa.gz"), alpha=1.0)
-        _, _, beam_search_result = decoder.decode(logits)
-        print(beam_search_result)
+        _, _, beam_search_result = decoder.decode(F.log_softmax(logits, -1))
+        print(beam_search_result)  # random small words from lexicon
+        self.assertListEqual(beam_search_result, ["x v i i       ", ])
 
 
 
