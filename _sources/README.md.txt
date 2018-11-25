@@ -1,39 +1,41 @@
-# Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with Pytorch
+# Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with PyTorch
 
 [ ![Build](https://travis-ci.com/artbataev/end2end.svg?branch=master) ](https://travis-ci.com/artbataev/end2end)
 
-**[ Documentation ](https://artbataev.github.io/end2end/)**
+The module focuses on experiments with CTC-loss (Connectionist Temporal Classification) and its modifications. 
 
+Under active development.
+
+## Documentation
+[ artbataev.github.io/end2end/ ](https://artbataev.github.io/end2end/)
+
+## Table of contents
+
+1. [Losses](#losses)
+2. [Decoders](#decoders)
+3. [Installation](#how-to-install)
+4. [Basic Usage](#how-to-use)
+5. [Future Plans](#future-plans)
 
 ## Losses
-- [x] Connectionist temporal classification (CTC) (python / numba)
 - [x] CTC (C++, CPU)
-- [x] CTC without blank (python / numba)
-- [x] Dynamic segmentation with CTC (python)
-
-### Future:
-- [ ] CTC without blank (C++, CPU)
-- [ ] CTC (Cuda)
-- [ ] Gram-CTC
-
+- [x] CTC without blank (python / numba), needs refactoring
+- [x] Dynamic segmentation with CTC (python), needs refactoring
 
 ## Decoders
 - [x] CTC Greedy Decoder (C++, CPU)
 - [x] CTC Beam Search Decoder (C++, CPU)
 - [x] CTC Beam Search Decoder with language model (C++, CPU)
 
-### Future:
-- [ ] Speedup CTC Beam Search Decoder
-- [ ] Gram-CTC Beam Search Decoder
+## How to install
 
-## Requirements
+**Requirements:**
 - Python 3.4+
-- Pytorch 1.0 and higher
+- PyTorch 1.0 and higher
 - numpy
 - numba
 
-## How to install
-1. Install Pytorch 1.0 (now pre-release preview) from [pytorch.org](https://pytorch.org), e.g.
+1. Install PyTorch 1.0 (now pre-release preview) from [pytorch.org](https://pytorch.org), e.g.
     ```bash
     pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
     ```
@@ -89,10 +91,23 @@ alphabet_size = 6
 decoder = CTCDecoder(blank_idx=0, beam_width=100, time_major=False, 
     labels=["_", "a", "b", "c", "d", " "])
 
-logits = torch.randn(batch_size, 50, alphabet_size).detach().requires_grad_()
+logits = torch.randn(batch_size, 50, alphabet_size).detach()
 logits_lengths = torch.full((batch_size,), 50, dtype=torch.long)
 
 decoded_targets, decoded_targets_lengths, decoded_sentences = decoder.decode(logits, logits_lengths)
 for sentence in decoded_sentences:
     print(sentence)
 ```
+
+### Future Plans
+
+#### Losses
+- [ ] CTC without blank (C++, CPU)
+- [ ] Gram-CTC
+- [ ] CTC (Cuda)
+
+#### Decoders
+- [ ] Speedup CTC Beam Search Decoder
+- [ ] Restrict Beam Search with vocabulary
+- [ ] Allow custom transcriptions
+- [ ] Gram-CTC Beam Search Decoder

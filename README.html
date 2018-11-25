@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with Pytorch &mdash; End2End  documentation</title>
+  <title>Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with PyTorch &mdash; End2End  documentation</title>
   
 
   
@@ -80,20 +80,20 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with Pytorch</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#losses">Losses</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#future">Future:</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#decoders">Decoders</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#future">Future:</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with PyTorch</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#table-of-contents">Table of contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#losses">Losses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#decoders">Decoders</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-to-install">How to install</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-to-use">How to use</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#ctc-loss">CTC Loss</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#ctc-decoder">CTC Decoder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#future-plans">Future Plans</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#losses">Losses</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#decoders">Decoders</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -146,7 +146,7 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with Pytorch</li>
+      <li>Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with PyTorch</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -166,25 +166,31 @@
            <div itemprop="articleBody">
             
   <div class="section" id="losses-and-decoders-for-end-to-end-speech-recognition-and-optical-character-recognition-with-pytorch">
-<span id="losses-and-decoders-for-end-to-end-speech-recognition-and-optical-character-recognition-with-pytorch"></span><h1>Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with Pytorch<a class="headerlink" href="#losses-and-decoders-for-end-to-end-speech-recognition-and-optical-character-recognition-with-pytorch" title="Permalink to this headline">¶</a></h1>
+<span id="losses-and-decoders-for-end-to-end-speech-recognition-and-optical-character-recognition-with-pytorch"></span><h1>Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with PyTorch<a class="headerlink" href="#losses-and-decoders-for-end-to-end-speech-recognition-and-optical-character-recognition-with-pytorch" title="Permalink to this headline">¶</a></h1>
 <p><a class="reference external" href="https://travis-ci.com/artbataev/end2end"> <img alt="Build" src="https://travis-ci.com/artbataev/end2end.svg?branch=master" /> </a></p>
-<p><strong><a class="reference external" href="https://artbataev.github.io/end2end/"> Documentation </a></strong></p>
+<p>The module focuses on experiments with CTC-loss (Connectionist Temporal Classification) and its modifications.</p>
+<p>Under active development.</p>
+<div class="section" id="documentation">
+<span id="documentation"></span><h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://artbataev.github.io/end2end/"> artbataev.github.io/end2end/ </a></p>
+</div>
+<div class="section" id="table-of-contents">
+<span id="table-of-contents"></span><h2>Table of contents<a class="headerlink" href="#table-of-contents" title="Permalink to this headline">¶</a></h2>
+<ol class="simple">
+<li><a class="reference external" href="#losses">Losses</a></li>
+<li><a class="reference external" href="#decoders">Decoders</a></li>
+<li><a class="reference external" href="#how-to-install">Installation</a></li>
+<li><a class="reference external" href="#how-to-use">Basic Usage</a></li>
+<li><a class="reference external" href="#future-plans">Future Plans</a></li>
+</ol>
+</div>
 <div class="section" id="losses">
 <span id="losses"></span><h2>Losses<a class="headerlink" href="#losses" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>[x] Connectionist temporal classification (CTC) (python / numba)</li>
 <li>[x] CTC (C++, CPU)</li>
-<li>[x] CTC without blank (python / numba)</li>
-<li>[x] Dynamic segmentation with CTC (python)</li>
+<li>[x] CTC without blank (python / numba), needs refactoring</li>
+<li>[x] Dynamic segmentation with CTC (python), needs refactoring</li>
 </ul>
-<div class="section" id="future">
-<span id="future"></span><h3>Future:<a class="headerlink" href="#future" title="Permalink to this headline">¶</a></h3>
-<ul class="simple">
-<li>[ ] CTC without blank (C++, CPU)</li>
-<li>[ ] CTC (Cuda)</li>
-<li>[ ] Gram-CTC</li>
-</ul>
-</div>
 </div>
 <div class="section" id="decoders">
 <span id="decoders"></span><h2>Decoders<a class="headerlink" href="#decoders" title="Permalink to this headline">¶</a></h2>
@@ -193,27 +199,18 @@
 <li>[x] CTC Beam Search Decoder (C++, CPU)</li>
 <li>[x] CTC Beam Search Decoder with language model (C++, CPU)</li>
 </ul>
-<div class="section" id="future">
-<span id="id1"></span><h3>Future:<a class="headerlink" href="#future" title="Permalink to this headline">¶</a></h3>
-<ul class="simple">
-<li>[ ] Speedup CTC Beam Search Decoder</li>
-<li>[ ] Gram-CTC Beam Search Decoder</li>
-</ul>
-</div>
-</div>
-<div class="section" id="requirements">
-<span id="requirements"></span><h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li>Python 3.4+</li>
-<li>Pytorch 1.0 and higher</li>
-<li>numpy</li>
-<li>numba</li>
-</ul>
 </div>
 <div class="section" id="how-to-install">
 <span id="how-to-install"></span><h2>How to install<a class="headerlink" href="#how-to-install" title="Permalink to this headline">¶</a></h2>
+<p><strong>Requirements:</strong></p>
+<ul class="simple">
+<li>Python 3.4+</li>
+<li>PyTorch 1.0 and higher</li>
+<li>numpy</li>
+<li>numba</li>
+</ul>
 <ol>
-<li><p class="first">Install Pytorch 1.0 (now pre-release preview) from <a class="reference external" href="https://pytorch.org">pytorch.org</a>, e.g.</p>
+<li><p class="first">Install PyTorch 1.0 (now pre-release preview) from <a class="reference external" href="https://pytorch.org">pytorch.org</a>, e.g.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
 </pre></div>
 </div>
@@ -272,13 +269,33 @@ python -m tests.test_ctc_decoder
 <span class="n">decoder</span> <span class="o">=</span> <span class="n">CTCDecoder</span><span class="p">(</span><span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">beam_width</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> 
     <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">])</span>
 
-<span class="n">logits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">alphabet_size</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">()</span>
+<span class="n">logits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">alphabet_size</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
 <span class="n">logits_lengths</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,),</span> <span class="mi">50</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
 
 <span class="n">decoded_targets</span><span class="p">,</span> <span class="n">decoded_targets_lengths</span><span class="p">,</span> <span class="n">decoded_sentences</span> <span class="o">=</span> <span class="n">decoder</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">sentence</span> <span class="ow">in</span> <span class="n">decoded_sentences</span><span class="p">:</span>
     <span class="k">print</span><span class="p">(</span><span class="n">sentence</span><span class="p">)</span>
 </pre></div>
+</div>
+</div>
+<div class="section" id="future-plans">
+<span id="future-plans"></span><h3>Future Plans<a class="headerlink" href="#future-plans" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="losses">
+<span id="id1"></span><h4>Losses<a class="headerlink" href="#losses" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li>[ ] CTC without blank (C++, CPU)</li>
+<li>[ ] Gram-CTC</li>
+<li>[ ] CTC (Cuda)</li>
+</ul>
+</div>
+<div class="section" id="decoders">
+<span id="id2"></span><h4>Decoders<a class="headerlink" href="#decoders" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li>[ ] Speedup CTC Beam Search Decoder</li>
+<li>[ ] Restrict Beam Search with vocabulary</li>
+<li>[ ] Allow custom transcriptions</li>
+<li>[ ] Gram-CTC Beam Search Decoder</li>
+</ul>
 </div>
 </div>
 </div>
