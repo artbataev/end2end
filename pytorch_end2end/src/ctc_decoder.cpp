@@ -148,7 +148,7 @@ std::tuple<
     std::vector<std::vector<int>> decoded_indices_vec{static_cast<size_t>(batch_size), std::vector<int>{}};
 
     {
-        ThreadPool pool{1};
+        ThreadPool pool{static_cast<size_t>(batch_size)};
         for (int i = 0; i < batch_size; i++) {
             pool.add_task([this, &logits, &logits_lengths, i,
                                   &decoded_sentences, &decoded_indices_vec, &decoded_targets_lengths] {
