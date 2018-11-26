@@ -3,6 +3,7 @@
 #include <map>
 #include <algorithm>
 #include <iostream>
+#include <memory>
 
 // pytorch
 #include <torch/extension.h>
@@ -147,7 +148,7 @@ std::tuple<
     std::vector<std::vector<int>> decoded_indices_vec{static_cast<size_t>(batch_size), std::vector<int>{}};
 
     {
-        ThreadPool pool{static_cast<size_t>(batch_size)};
+        ThreadPool pool{1};
         for (int i = 0; i < batch_size; i++) {
             pool.add_task([this, &logits, &logits_lengths, i,
                                   &decoded_sentences, &decoded_indices_vec, &decoded_targets_lengths] {
@@ -192,21 +193,57 @@ std::string CTCDecoder::indices2str(const at::Tensor& char_ids, int len) {
 
 using prefix_key_t = std::vector<int>;
 
-class Prefix {
+class Prefix : public std::enable_shared_from_this<Prefix> {
 public:
-    Prefix() : prob_last_b{-INFINITY}, prob_last_nb{-INFINITY}, lm_weight{-1000} {}
+    Prefix() : cur_prob_blank{-INFINITY},
+               cur_prob_not_blank{-INFINITY},
+               prev_prob_blank{-INFINITY},
+               prev_prob_not_blank{-INFINITY},
+               last_char{0},
+               next_data{},
+               parent{nullptr},
+               lm_weight{-20000} {}
 
-    Prefix(double prob_last_b_, double prob_last_nb_, double lm_weight_) : prob_last_b{prob_last_b_},
-                                                        prob_last_nb{prob_last_nb_},
-                                                        lm_weight{lm_weight_} {}
-
-    double prob_last_b;
-    double prob_last_nb;
+    double cur_prob_blank;
+    double cur_prob_not_blank;
+    double prev_prob_blank;
+    double prev_prob_not_blank;
+    int last_char;
     double lm_weight;
+    std::shared_ptr<Prefix> parent;
+    std::map<int, std::weak_ptr<Prefix>> next_data;
 
+    std::vector<int> get_sentence() {
+        std::vector<int> result;
+        auto cur_char = last_char;
+        auto cur_parent = parent;
+        while (last_char >= 0 && cur_parent != nullptr) {
+            result.emplace_back(cur_char);
+            cur_char = cur_parent->last_char;
+            cur_parent = cur_parent->parent;
+        }
+        return {result.rbegin(), result.rend()};
+    }
 
-    double get_full_prob() {
-        return log_sum_exp(prob_last_nb, prob_last_b) + lm_weight;
+    std::pair<std::shared_ptr<Prefix>, bool> get_next(int char_id) {
+        if (next_data.count(char_id) > 0)
+            if (auto next_prefix = next_data.at(char_id).lock())
+                return {next_prefix, false};
+
+        auto new_prefix = std::make_shared<Prefix>();
+        next_data[char_id] = new_prefix;
+        new_prefix->last_char = char_id;
+        new_prefix->lm_weight = lm_weight;
+        new_prefix->parent = shared_from_this();
+        return {new_prefix, true};
+    }
+
+    double get_prev_full_prob() const {
+        return log_sum_exp(prev_prob_not_blank, prev_prob_blank);
+    }
+
+    double get_prev_full_prob_with_lmwt() const {
+        return get_prev_full_prob() + lm_weight;
     }
 };
 
@@ -217,100 +254,91 @@ CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
     auto logits_a = logits_2d.accessor<float, 2>(); // TODO: convert to double?
     auto alphabet_size = static_cast<int>(logits_2d.size(1));
 
-    std::map<prefix_key_t, Prefix> prev_prefixes;
-    prev_prefixes[{blank_idx}] = {0, -INFINITY, oov_score * lmwt};
-    std::map<prefix_key_t, Prefix> next_prefixes;
+    // NB: prob - log-probabilities
+    std::vector<std::shared_ptr<Prefix>> prefixes;
+    auto init_prefix = std::make_shared<Prefix>();
+    init_prefix->prev_prob_blank = 0.0;
+    prefixes.emplace_back(init_prefix);
 
+    // at every timestep
     for (int l = 0; l < sequence_len; l++) {
-        // generate new hypotheses
-        for (const auto& prev_prefix: prev_prefixes) {
-            auto& prefix_key = prev_prefix.first;
-            auto& prefix_weights = prev_prefix.second;
-            auto last_char_id = prefix_key[prefix_key.size() - 1];
-            auto cur_log_prob_blank = logits_a[l][blank_idx];
-            for (int char_id = 0; char_id < alphabet_size; char_id++) {
-                auto cur_log_prob = logits_a[l][char_id];
+        auto cur_log_prob_blank = logits_a[l][blank_idx];
+
+        std::vector<std::shared_ptr<Prefix>> new_prefixes;
+        // for every character
+        for (int char_id = 0; char_id < alphabet_size; char_id++) {
+            auto cur_prob = logits_a[l][char_id];
+            // for every prefix
+            for (auto& prefix: prefixes) {
                 if (char_id == blank_idx) {
-                    next_prefixes[prefix_key].prob_last_b = log_sum_exp(
-                            next_prefixes[prefix_key].prob_last_b,
-                            cur_log_prob + log_sum_exp(prefix_weights.prob_last_b, prefix_weights.prob_last_nb));
-
-                    // lm weight
-                    next_prefixes[prefix_key].lm_weight = prefix_weights.lm_weight;
+                    prefix->cur_prob_blank = log_sum_exp(prefix->cur_prob_blank,
+                                                         cur_prob + prefix->get_prev_full_prob());
                 } else {
-                    auto new_prefix_key{prefix_key};
-                    new_prefix_key.emplace_back(char_id);
-                    if (char_id == last_char_id) {
-                        next_prefixes[prefix_key].prob_last_nb = log_sum_exp(
-                                next_prefixes[prefix_key].prob_last_nb, cur_log_prob + prefix_weights.prob_last_b);
-                        next_prefixes[new_prefix_key].prob_last_nb = log_sum_exp(
-                                next_prefixes[new_prefix_key].prob_last_nb, cur_log_prob + prefix_weights.prob_last_b);
+                    auto new_prefix_res = prefix->get_next(char_id);
+                    auto new_prefix = new_prefix_res.first;
+                    auto is_new = new_prefix_res.second;
+                    if (is_new)
+                        new_prefixes.emplace_back(new_prefix);
 
-                        // lm weight
-                        next_prefixes.at(prefix_key).lm_weight = prefix_weights.lm_weight;
-                        next_prefixes.at(new_prefix_key).lm_weight = prefix_weights.lm_weight;
+                    if (char_id == prefix->last_char) { // repeated character
+                        new_prefix->cur_prob_not_blank = log_sum_exp(
+                                new_prefix->cur_prob_not_blank,
+                                cur_prob + prefix->prev_prob_blank);
+                        prefix->cur_prob_not_blank = log_sum_exp(
+                                prefix->cur_prob_not_blank,
+                                cur_prob + prefix->prev_prob_not_blank);
                     } else {
-                        next_prefixes[new_prefix_key].prob_last_nb = log_sum_exp(
-                                next_prefixes[new_prefix_key].prob_last_nb,
-                                cur_log_prob + log_sum_exp(prefix_weights.prob_last_b, prefix_weights.prob_last_nb));
+                        new_prefix->cur_prob_not_blank = log_sum_exp(
+                                new_prefix->cur_prob_not_blank,
+                                cur_prob + prefix->get_prev_full_prob());
 
                         // lm weight
-                        if (lm_model != nullptr && (char_id == space_idx) && !is_empty_sentence(new_prefix_key)) {
-                            next_prefixes[new_prefix_key].lm_weight = get_score_for_sentence(new_prefix_key) * lmwt;
-                        } else {
-                            next_prefixes[new_prefix_key].lm_weight = prefix_weights.lm_weight;
+                        auto new_prefix_sentence = new_prefix->get_sentence();
+                        // TODO: score only if char_id == space_idx
+                        if (lm_model != nullptr && !is_empty_sentence(new_prefix_sentence)) {
+                            new_prefix->lm_weight = get_score_for_sentence(new_prefix_sentence) * lmwt;
                         }
                     }
-                    if (next_prefixes.at(new_prefix_key).prob_last_b == -INFINITY &&
-                        prev_prefixes.count(new_prefix_key) > 0)
-                        next_prefixes.at(new_prefix_key).prob_last_b =
-                                cur_log_prob_blank + prev_prefixes.at(new_prefix_key).get_full_prob();
-
-                    if (next_prefixes.at(new_prefix_key).prob_last_nb == -INFINITY &&
-                        prev_prefixes.count(new_prefix_key) > 0)
-                        next_prefixes.at(new_prefix_key).prob_last_nb =
-                                cur_log_prob + prev_prefixes.at(new_prefix_key).prob_last_nb;
                 }
-            }
-        }
-        std::vector<prefix_key_t> next_prefixes_keys;
-        next_prefixes_keys.reserve(next_prefixes.size());
-        for (const auto& prefix: next_prefixes) {
-            next_prefixes_keys.emplace_back(prefix.first);
-            if (lm_model != nullptr && !is_empty_sentence(prefix.first))
-                next_prefixes[prefix.first].lm_weight = get_score_for_sentence(prefix.first) * lmwt;
-        }
-        if (next_prefixes.size() > beam_width) {
-            std::sort(next_prefixes_keys.begin(), next_prefixes_keys.end(),
-                      [&next_prefixes](const prefix_key_t& lhs, const prefix_key_t& rhs) {
-                          return next_prefixes.at(lhs).get_full_prob() > next_prefixes.at(rhs).get_full_prob();
-                      });
-            prev_prefixes.clear();
-            for (int i = 0; i < beam_width; i++)
-                prev_prefixes[next_prefixes_keys[i]] = next_prefixes[next_prefixes_keys[i]];
-        } else {
-            std::swap(prev_prefixes, next_prefixes);
-        }
-        next_prefixes.clear();
-    }
+            } // end for: prefixes
+        } // end for: characters
+//        std::cout << "step: " << l << std::endl;
+        prefixes.reserve(prefixes.size() + new_prefixes.size());
+        prefixes.insert(prefixes.end(), new_prefixes.begin(), new_prefixes.end());
+        for (auto& prefix: prefixes) {
+            prefix->prev_prob_blank = prefix->cur_prob_blank;
+            prefix->prev_prob_not_blank = prefix->cur_prob_not_blank;
+            prefix->cur_prob_blank = -INFINITY;
+            prefix->cur_prob_not_blank = -INFINITY;
 
-    std::vector<prefix_key_t> prev_prefixes_keys;
-    prev_prefixes_keys.reserve(prev_prefixes_keys.size());
-    for (const auto& prefix: prev_prefixes)
-        prev_prefixes_keys.emplace_back(prefix.first);
-    std::sort(prev_prefixes_keys.begin(), prev_prefixes_keys.end(),
-              [&prev_prefixes](const prefix_key_t& lhs, const prefix_key_t& rhs) {
-                  return prev_prefixes.at(lhs).get_full_prob() > prev_prefixes.at(rhs).get_full_prob();
-              });
+//            std::cout << "\"" << indices2str(prefix->get_sentence()) << "\": " << std::exp(prefix->get_prev_full_prob())
+//                      << ", " << prefix->get_prev_full_prob()
+//                      << " | " << prefix->lm_weight << " " << prefix->prev_prob_blank << " "
+//                      << prefix->prev_prob_not_blank << "\n";
+        }
 
-    std::vector<int> result_sequence{prev_prefixes_keys[0].begin() + 1, prev_prefixes_keys[0].end()};
+        std::sort(prefixes.begin(), prefixes.end(),
+                  [](const std::shared_ptr<Prefix>& lhs, const std::shared_ptr<Prefix>& rhs) {
+                      return lhs->get_prev_full_prob_with_lmwt() > rhs->get_prev_full_prob_with_lmwt();
+                  });
+
+
+        if (prefixes.size() > beam_width)
+            prefixes.resize(static_cast<size_t>(beam_width));
+    } // end for: timestep
+
+//    std::cout << "=======================" << std::endl;
+//    std::cout << "=======================" << std::endl;
+    std::vector<int> result_sequence{prefixes[0]->get_sentence()};
     std::string result_sequence_str = indices2str(result_sequence);
-//    for (int i = 0; i < std::min(10, static_cast<int>(prev_prefixes_keys.size())); i++) {
-//        const auto& prefix = prev_prefixes_keys[i];
-//        std::cout << indices2str({prefix.begin() + 1, prefix.end()}) << " " << prev_prefixes[prefix].get_full_prob()
-//                  << " | " << prev_prefixes[prefix].lm_weight << " " << prev_prefixes[prefix].prob_last_b << " "
-//                  << prev_prefixes[prefix].prob_last_nb << "\n";
-//    }
+    for (int i = 0; i < std::min(20, static_cast<int>(prefixes.size())); i++) {
+        const auto& prefix = prefixes[i];
+//        std::cout << "\"" << indices2str(prefix->get_sentence()) << "\": " << std::exp(prefix->get_prev_full_prob())
+//                  << ", " << prefix->get_prev_full_prob()
+//                  << " | " << prefix->lm_weight << " " << prefix->prev_prob_blank << " "
+//                  << prefix->prev_prob_not_blank << "\n";
+    }
+//    std::cout << "=======================" << std::endl;
 
     return {result_sequence, static_cast<int>(result_sequence.size()), result_sequence_str};
 }

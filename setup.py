@@ -1,7 +1,7 @@
 import os
-import sys
-import subprocess
 import platform
+import subprocess
+import sys
 
 from setuptools import find_packages
 from setuptools import setup, Extension
@@ -74,7 +74,7 @@ setup(
     url="https://artbataev.github.io/end2end/",
     packages=find_packages(),
     license="MIT",
-    install_requires=["numpy", "numba", ],
+    install_requires=["numpy", "numba", "tqdm"],
     ext_modules=[CMakeExtension("pytorch_end2end")],
     cmdclass={"build_ext": CMakeBuild, }
 )
