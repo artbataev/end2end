@@ -9,14 +9,6 @@ Under active development.
 ## Documentation
 [ artbataev.github.io/end2end/ ](https://artbataev.github.io/end2end/)
 
-## Table of contents
-
-1. [Losses](#losses)
-2. [Decoders](#decoders)
-3. [Installation](#how-to-install)
-4. [Basic Usage](#how-to-use)
-5. [Future Plans](#future-plans)
-
 ## Losses
 - [x] CTC (C++, CPU)
 - [x] CTC without blank (python / numba), needs refactoring
@@ -35,9 +27,9 @@ Under active development.
 - numpy
 - numba
 
-1. Install PyTorch 1.0 (now pre-release preview) from [pytorch.org](https://pytorch.org), e.g.
+1. Install PyTorch 1.0 from [pytorch.org](https://pytorch.org), e.g.
     ```bash
-    pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+    pip install torch
     ```
 
 2. Install tools to compile
