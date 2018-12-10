@@ -17,7 +17,7 @@ addons:
 
 install:
 - pip install -r requirements.txt
-- pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+- pip install torch_nightly -f http://download.pytorch.org/whl/cpu/torch-1.0.0-cp36-cp36m-linux_x86_64.whl
 - pip install -r docs/requirements.txt
 
 before_script:
