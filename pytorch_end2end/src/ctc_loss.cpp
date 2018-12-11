@@ -12,10 +12,8 @@ void CTCLossWrapper::_ctc_loss_forward_2d(
         int batch_i,
         torch::Tensor& losses,
         torch::Tensor& grads) {
-    auto logits_2d = logits[batch_i].detach();
-    logits_2d.set_requires_grad(false);
-    auto targets_1d = targets[batch_i].detach();
-    targets_1d.set_requires_grad(false);
+    auto logits_2d = logits[batch_i];
+    auto targets_1d = targets[batch_i];
     auto num_labels = logits_2d.size(1);
     auto extended_targets_len = targets_len * 2 + 1;
     auto extended_targets = torch::full(extended_targets_len, blank_idx, targets_1d.options());
@@ -94,16 +92,18 @@ std::tuple<
         at::Tensor,
         at::Tensor
 > CTCLossWrapper::ctc_loss_forward(
-        const at::Tensor& logits,
-        const at::Tensor& targets,
-        const at::Tensor& logits_lengths,
-        const at::Tensor& targets_lengths) {
-    auto src_device = logits.device();
-    auto targets_device = targets.device();
-    auto logits_length_device = logits_lengths.device();
-    auto targets_lengths_device = targets_lengths.device();
+        const at::Tensor& logits_,
+        const at::Tensor& targets_,
+        const at::Tensor& logits_lengths_,
+        const at::Tensor& targets_lengths_) {
 
+    auto src_device = logits_.device();
     auto work_device = torch::kCPU;
+
+    auto logits = logits_.to(work_device).detach();
+    auto targets = targets_.to(work_device);
+    auto logits_lengths = logits_lengths_.to(work_device);
+    auto targets_lengths = targets_lengths_.to(work_device);
 
     auto batch_size = logits_lengths.size(0);
 
@@ -111,11 +111,6 @@ std::tuple<
             work_device).requires_grad(false);
     auto losses = torch::zeros(batch_size, options);
     auto grads = torch::zeros({batch_size, logits.size(1), logits.size(2)}, options);
-
-    logits.to(work_device);
-    targets.to(work_device);
-    logits_lengths.to(work_device);
-    targets_lengths.to(work_device);
 
     {
         ThreadPool pool{static_cast<size_t>(batch_size)};
@@ -128,12 +123,8 @@ std::tuple<
         }
     }
 
-    losses.to(src_device);
-    grads.to(src_device);
-    logits.to(src_device);
-    targets.to(targets_device);
-    logits_lengths.to(logits_length_device);
-    targets_lengths.to(targets_lengths_device);
+    losses = losses.to(src_device);
+    grads = grads.to(src_device);
 
     return {losses, grads};
 }
