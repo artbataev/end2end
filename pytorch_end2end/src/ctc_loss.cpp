@@ -1,9 +1,5 @@
 #include <torch/extension.h>
 #include "ctc_loss.h"
-#include <cmath>
-#include <algorithm>
-#include <thread>
-#include <vector>
 #include "math_utils.h"
 #include "threadpool.h"
 
@@ -102,12 +98,24 @@ std::tuple<
         const at::Tensor& targets,
         const at::Tensor& logits_lengths,
         const at::Tensor& targets_lengths) {
+    auto src_device = logits.device();
+    auto targets_device = targets.device();
+    auto logits_length_device = logits_lengths.device();
+    auto targets_lengths_device = targets_lengths.device();
+
+    auto work_device = torch::kCPU;
 
     auto batch_size = logits_lengths.size(0);
-    auto losses = torch::zeros(batch_size, logits.options());
-    auto grads = torch::zeros_like(logits);
-    grads.set_requires_grad(false);
-    losses.set_requires_grad(false);
+
+    auto options = torch::TensorOptions().dtype(logits.dtype()).layout(torch::kStrided).device(
+            work_device).requires_grad(false);
+    auto losses = torch::zeros(batch_size, options);
+    auto grads = torch::zeros({batch_size, logits.size(1), logits.size(2)}, options);
+
+    logits.to(work_device);
+    targets.to(work_device);
+    logits_lengths.to(work_device);
+    targets_lengths.to(work_device);
 
     {
         ThreadPool pool{static_cast<size_t>(batch_size)};
@@ -119,6 +127,13 @@ std::tuple<
             });
         }
     }
+
+    losses.to(src_device);
+    grads.to(src_device);
+    logits.to(src_device);
+    targets.to(targets_device);
+    logits_lengths.to(logits_length_device);
+    targets_lengths.to(targets_lengths_device);
 
     return {losses, grads};
 }
