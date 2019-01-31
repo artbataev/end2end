@@ -47,7 +47,7 @@ class CTCLoss(nn.Module):
 
         loss = CTCLossFunction().apply(logits_logsoftmax, targets, logits_lengths, targets_lengths, self._blank_index)
 
-        if self._reduce is not None:
+        if self._reduce:
             if self._size_average:
                 return loss.mean()
             else:
