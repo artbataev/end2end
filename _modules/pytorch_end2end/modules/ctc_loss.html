@@ -194,7 +194,7 @@
 
         <span class="n">loss</span> <span class="o">=</span> <span class="n">CTCLossFunction</span><span class="p">()</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">logits_logsoftmax</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="p">,</span> <span class="n">targets_lengths</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_blank_index</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reduce</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reduce</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size_average</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">loss</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
