@@ -17,9 +17,9 @@ public:
 
 private:
     void _ctc_loss_forward_2d(
-            const torch::Tensor& logits,
-            const torch::Tensor& targets,
-            int sequence_length, int targets_len,
+            const torch::Tensor& logits_2d,
+            const torch::TensorAccessor<int64_t, 1>& targets_1d_a,
+            int seq_len, int targets_len,
             int batch_i,
             torch::Tensor& losses,
             torch::Tensor& grads);
