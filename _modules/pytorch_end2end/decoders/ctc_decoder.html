@@ -178,25 +178,28 @@
 <span class="sd">    :param time_major: if logits are time major (else batch major)</span>
 <span class="sd">    :param labels: list of strings with labels (including blank symbol), e.g. ``[&quot;_&quot;, &quot;a&quot;, &quot;b&quot;, &quot;c&quot;]``</span>
 <span class="sd">    :param lm_path: path to language model (ARPA format or gzipped ARPA)</span>
-<span class="sd">    :param alpha: language model weight, default ``1.0``, makes sense only if language model is present</span>
+<span class="sd">    :param lmwt: language model weight, default ``1.0``, makes sense only if language model is present</span>
+<span class="sd">    :param wip: word insertion penalty, default ``1.0``, makes sense only if labels are present</span>
 <span class="sd">    :param case_sensitive: obtain language model scores with respect to case, default ``False``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam_width</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">lm_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-                 <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                 <span class="n">lm_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lmwt</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">wip</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                 <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_beam_width</span> <span class="o">=</span> <span class="n">beam_width</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span> <span class="o">=</span> <span class="n">blank_idx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span> <span class="o">=</span> <span class="n">labels</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_lm_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">lm_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">lm_path</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lmwt</span> <span class="o">=</span> <span class="n">lmwt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wip</span> <span class="o">=</span> <span class="n">wip</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_time_major</span> <span class="o">=</span> <span class="n">time_major</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_case_sensitive</span> <span class="o">=</span> <span class="n">case_sensitive</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_params</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span> <span class="o">=</span> <span class="n">cpp_ctc_decoder</span><span class="o">.</span><span class="n">CTCDecoder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beam_width</span><span class="p">,</span>
-                                                   <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lm_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_case_sensitive</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span><span class="p">)</span>
+                                                   <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="p">,</span>
+                                                   <span class="bp">self</span><span class="o">.</span><span class="n">_lm_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lmwt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wip</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_case_sensitive</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_check_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># TODO: Check all params</span>
@@ -238,8 +241,8 @@
             <span class="n">logits_lengths</span> <span class="o">=</span> <span class="n">logits_lengths</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
 
         <span class="n">decoded_targets</span><span class="p">,</span> <span class="n">decoded_targets_lengths</span><span class="p">,</span> <span class="n">decoded_sentences</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span>
-            <span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="p">,</span>
-            <span class="n">logits_lengths</span><span class="o">=</span><span class="n">logits_lengths</span><span class="p">)</span>
+            <span class="n">logits_</span><span class="o">=</span><span class="n">logits</span><span class="p">,</span>
+            <span class="n">logits_lengths_</span><span class="o">=</span><span class="n">logits_lengths</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">DecoderResults</span><span class="p">(</span><span class="n">decoded_targets</span><span class="p">,</span> <span class="n">decoded_targets_lengths</span><span class="p">,</span> <span class="n">decoded_sentences</span><span class="p">)</span></div>
 
@@ -275,8 +278,8 @@
             <span class="n">logits_lengths</span> <span class="o">=</span> <span class="n">logits_lengths</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
 
         <span class="n">decoded_targets</span><span class="p">,</span> <span class="n">decoded_targets_lengths</span><span class="p">,</span> <span class="n">decoded_sentences</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decoder</span><span class="o">.</span><span class="n">decode_greedy</span><span class="p">(</span>
-            <span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="p">,</span>
-            <span class="n">logits_lengths</span><span class="o">=</span><span class="n">logits_lengths</span><span class="p">)</span>
+            <span class="n">logits_</span><span class="o">=</span><span class="n">logits</span><span class="p">,</span>
+            <span class="n">logits_lengths_</span><span class="o">=</span><span class="n">logits_lengths</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">DecoderResults</span><span class="p">(</span><span class="n">decoded_targets</span><span class="p">,</span> <span class="n">decoded_targets_lengths</span><span class="p">,</span> <span class="n">decoded_sentences</span><span class="p">)</span></div></div>
 </pre></div>

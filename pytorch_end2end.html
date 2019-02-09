@@ -204,7 +204,7 @@ else of shape <code class="docutils literal notranslate"><span class="pre">(batc
 
 <dl class="class">
 <dt id="pytorch_end2end.CTCDecoder">
-<em class="property">class </em><code class="descclassname">pytorch_end2end.</code><code class="descname">CTCDecoder</code><span class="sig-paren">(</span><em>beam_width=100</em>, <em>blank_idx=0</em>, <em>time_major=False</em>, <em>labels=None</em>, <em>lm_path=None</em>, <em>alpha=1.0</em>, <em>beta=1.0</em>, <em>case_sensitive=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pytorch_end2end.</code><code class="descname">CTCDecoder</code><span class="sig-paren">(</span><em>beam_width=100</em>, <em>blank_idx=0</em>, <em>time_major=False</em>, <em>labels=None</em>, <em>lm_path=None</em>, <em>lmwt=1.0</em>, <em>wip=1.0</em>, <em>case_sensitive=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decoder class to perform CTC decoding</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -218,7 +218,8 @@ else of shape <code class="docutils literal notranslate"><span class="pre">(batc
 <li><strong>time_major</strong> – if logits are time major (else batch major)</li>
 <li><strong>labels</strong> – list of strings with labels (including blank symbol), e.g. <code class="docutils literal notranslate"><span class="pre">[&quot;_&quot;,</span> <span class="pre">&quot;a&quot;,</span> <span class="pre">&quot;b&quot;,</span> <span class="pre">&quot;c&quot;]</span></code></li>
 <li><strong>lm_path</strong> – path to language model (ARPA format or gzipped ARPA)</li>
-<li><strong>alpha</strong> – language model weight, default <code class="docutils literal notranslate"><span class="pre">1.0</span></code>, makes sense only if language model is present</li>
+<li><strong>lmwt</strong> – language model weight, default <code class="docutils literal notranslate"><span class="pre">1.0</span></code>, makes sense only if language model is present</li>
+<li><strong>wip</strong> – word insertion penalty, default <code class="docutils literal notranslate"><span class="pre">1.0</span></code>, makes sense only if labels are present</li>
 <li><strong>case_sensitive</strong> – obtain language model scores with respect to case, default <code class="docutils literal notranslate"><span class="pre">False</span></code></li>
 </ul>
 </td>
