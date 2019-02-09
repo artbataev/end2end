@@ -31,25 +31,28 @@ class CTCDecoder:
     :param time_major: if logits are time major (else batch major)
     :param labels: list of strings with labels (including blank symbol), e.g. ``["_", "a", "b", "c"]``
     :param lm_path: path to language model (ARPA format or gzipped ARPA)
-    :param alpha: language model weight, default ``1.0``, makes sense only if language model is present
+    :param lmwt: language model weight, default ``1.0``, makes sense only if language model is present
+    :param wip: word insertion penalty, default ``1.0``, makes sense only if labels are present
     :param case_sensitive: obtain language model scores with respect to case, default ``False``
     """
 
     def __init__(self, beam_width=100, blank_idx=0, time_major=False, labels=None,
-                 lm_path=None, alpha=1.0, beta=1.0,
-                 case_sensitive=False):
+                 lm_path=None, lmwt=1.0, wip=1.0,
+                 case_sensitive=True):
         self._beam_width = beam_width
         self._blank_idx = blank_idx
         self._labels = labels or []
         self._lm_path = os.path.abspath(lm_path) if lm_path else ""
-        self._alpha = alpha
+        self._lmwt = lmwt
+        self._wip = wip
         self._time_major = time_major
         self._case_sensitive = case_sensitive
 
         self._check_params()
 
         self._decoder = cpp_ctc_decoder.CTCDecoder(self._blank_idx, self._beam_width,
-                                                   self._labels, self._lm_path, self._case_sensitive, self._alpha)
+                                                   self._labels,
+                                                   self._lm_path, self._lmwt, self._wip, self._case_sensitive)
 
     def _check_params(self):
         # TODO: Check all params
@@ -91,8 +94,8 @@ class CTCDecoder:
             logits_lengths = logits_lengths.cpu()
 
         decoded_targets, decoded_targets_lengths, decoded_sentences = self._decoder.decode(
-            logits=logits,
-            logits_lengths=logits_lengths)
+            logits_=logits,
+            logits_lengths_=logits_lengths)
 
         return DecoderResults(decoded_targets, decoded_targets_lengths, decoded_sentences)
 
@@ -128,7 +131,7 @@ class CTCDecoder:
             logits_lengths = logits_lengths.cpu()
 
         decoded_targets, decoded_targets_lengths, decoded_sentences = self._decoder.decode_greedy(
-            logits=logits,
-            logits_lengths=logits_lengths)
+            logits_=logits,
+            logits_lengths_=logits_lengths)
 
         return DecoderResults(decoded_targets, decoded_targets_lengths, decoded_sentences)

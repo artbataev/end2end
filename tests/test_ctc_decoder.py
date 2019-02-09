@@ -163,7 +163,7 @@ class TestCTCDecoder(unittest.TestCase):
         _, _, beam_search_result = decoder.decode(log_probs)
         self.assertListEqual(beam_search_result, expected_beam_search_result)
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_random_with_lm(self):
         blank_idx = 0
         np.random.seed(534)
@@ -173,7 +173,7 @@ class TestCTCDecoder(unittest.TestCase):
             beam_width=100, blank_idx=blank_idx,
             labels=labels, time_major=False,
             lm_path=os.path.join(os.path.dirname(__file__), "librispeech_data",
-                                 "librispeech_3-gram_pruned.3e-7.arpa.gz"), alpha=1.0)
+                                 "librispeech_3-gram_pruned.3e-7.arpa.gz"), lmwt=1.0, wip=0.0, case_sensitive=False)
         _, _, beam_search_result = decoder.decode(F.log_softmax(logits, -1))
         print(beam_search_result)  # random small words from lexicon
         self.assertListEqual(beam_search_result, ["m r i g a y u h h t m ", ])  # TODO: Test that in vocabulary

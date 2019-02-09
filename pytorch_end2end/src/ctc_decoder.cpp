@@ -1,16 +1,14 @@
 #include <vector>
 #include <string>
 #include <map>
-#include <algorithm>
 #include <iostream>
-#include <memory>
+#include <algorithm>
 
 // pytorch
 #include <torch/extension.h>
 
 // kenlm
 #include "lm/model.hh"
-#include "lm/enumerate_vocab.hh"
 
 #include "math_utils.h"
 #include "ctc_decoder.h"
@@ -41,12 +39,15 @@ std::string str_to_lower(const std::string& str) {
 
 CTCDecoder::CTCDecoder(int blank_idx_, int beam_width_ = 100,
                        std::vector<std::string> labels_ = {},
-                       const std::string& lm_path = "", bool case_sensitive_ = false, double lmwt_ = 1.0) :
+                       const std::string& lm_path = "",
+                       double lmwt_ = 1.0,
+                       double wip_ = 0.0,
+                       bool case_sensitive_ = false) :
         blank_idx(blank_idx_),
         beam_width{beam_width_},
         space_idx{-1},
         lmwt{lmwt_},
-        oov_score{-10000}, // TODO: tune
+        wip{wip_},
         labels(std::move(labels_)), case_sensitive(case_sensitive_) {
     if (!labels.empty()) {
         space_idx = static_cast<int>(std::distance(labels.begin(), std::find(labels.begin(), labels.end(), " ")));
@@ -84,20 +85,22 @@ lm::WordIndex CTCDecoder::get_idx(const std::string& word) {
 
 double CTCDecoder::get_score_for_sentence(std::vector<std::string> words) {
     if (lm_model == nullptr)
-        return oov_score;
-    double result = 1.0;
+        return 0;
+
+    double result = 0;
     lm_state_t state(lm_model->BeginSentenceState()), out_state;
     for (const auto& word: words) {
         auto word_idx = get_idx(word);
-        if (word_idx == 0)
-            return oov_score;
         result = lm_model->Score(state, word_idx, out_state);
         state = out_state;
     }
-    return result;
+    return result - words.size() * wip;
 }
 
 double CTCDecoder::get_score_for_sentence(const std::vector<int>& sentence) {
+    if (lm_model == nullptr)
+        return 0;
+
     std::vector<std::string> words;
     std::string word;
     for (const auto& c_id: sentence) {
@@ -114,7 +117,7 @@ double CTCDecoder::get_score_for_sentence(const std::vector<int>& sentence) {
         words.emplace_back(word);
     if (!words.empty())
         return get_score_for_sentence(words);
-    return oov_score;
+    return 0;
 }
 
 bool CTCDecoder::is_empty_sentence(const std::vector<int>& sentence) {
@@ -139,9 +142,17 @@ std::tuple<
         at::Tensor,
         at::Tensor,
         std::vector<std::string>
-> CTCDecoder::decode(const at::Tensor& logits,
-                     const at::Tensor& logits_lengths) {
+> CTCDecoder::decode(const at::Tensor& logits_,
+                     const at::Tensor& logits_lengths_) {
+    const auto work_device = torch::kCPU;
+
+    auto logits = logits_.detach().to(work_device).to(torch::kDouble);
+    auto logits_lengths = logits_lengths_.to(work_device).to(torch::kLong);
+    auto logits_a = logits.accessor<double, 3>();
+    auto logits_lengths_a = logits_lengths.accessor<int64_t, 1>();
+
     auto decoded_targets_lengths = at::zeros_like(logits_lengths);
+    auto decoded_targets_lengths_a = decoded_targets_lengths.accessor<int64_t, 1>();
     auto batch_size = logits_lengths.size(0);
 
     std::vector<std::string> decoded_sentences{static_cast<size_t>(batch_size), ""};
@@ -150,12 +161,12 @@ std::tuple<
     {
         ThreadPool pool{static_cast<size_t>(batch_size)};
         for (int i = 0; i < batch_size; i++) {
-            pool.add_task([this, &logits, &logits_lengths, i,
-                                  &decoded_sentences, &decoded_indices_vec, &decoded_targets_lengths] {
+            pool.add_task([this, &logits_a, &logits_lengths_a, i,
+                                  &decoded_sentences, &decoded_indices_vec, &decoded_targets_lengths_a] {
                 int current_sequence_len = 0;
                 std::tie(decoded_indices_vec[i], current_sequence_len, decoded_sentences[i]) = decode_sentence(
-                        logits[i], logits_lengths[i].item<int>());
-                decoded_targets_lengths[i] = current_sequence_len;
+                        logits_a[i], logits_lengths_a[i]);
+                decoded_targets_lengths_a[i] = current_sequence_len;
             });
         }
     }
@@ -163,7 +174,7 @@ std::tuple<
     auto max_sequence_len = decoded_targets_lengths.max().item<int64_t>();
     auto decoded_indices = at::zeros({batch_size, max_sequence_len}, logits_lengths.options());
     for (int i = 0; i < batch_size; i++) {
-        for (int l = 0; l < decoded_targets_lengths[i].item<int>(); l++) {
+        for (int l = 0; l < decoded_targets_lengths_a[i]; l++) {
             decoded_indices[i][l] = decoded_indices_vec[i][l];
         }
     }
@@ -181,12 +192,12 @@ std::string CTCDecoder::indices2str(const std::vector<int>& char_ids) {
     return result;
 }
 
-std::string CTCDecoder::indices2str(const at::Tensor& char_ids, int len) {
+std::string CTCDecoder::indices2str(const at::TensorAccessor<int64_t, 1>& char_ids, int len) {
     std::string result;
     result.reserve(static_cast<size_t>(len));
     if (!labels.empty()) {
         for (int i = 0; i < len; i++)
-            result += labels[char_ids[i].item<int>()];
+            result += labels[char_ids[i]];
     }
     return result;
 }
@@ -202,14 +213,14 @@ public:
                last_char{0},
                next_data{},
                parent{nullptr},
-               lm_weight{-20000} {}
+               lm_score{-20000} {}
 
     double cur_prob_blank;
     double cur_prob_not_blank;
     double prev_prob_blank;
     double prev_prob_not_blank;
     int last_char;
-    double lm_weight;
+    double lm_score;
     std::shared_ptr<Prefix> parent;
     std::map<int, std::weak_ptr<Prefix>> next_data;
 
@@ -233,7 +244,7 @@ public:
         auto new_prefix = std::make_shared<Prefix>();
         next_data[char_id] = new_prefix;
         new_prefix->last_char = char_id;
-        new_prefix->lm_weight = lm_weight;
+        new_prefix->lm_score = lm_score;
         new_prefix->parent = shared_from_this();
         return {new_prefix, true};
     }
@@ -243,16 +254,29 @@ public:
     }
 
     double get_prev_full_prob_with_lmwt() const {
-        return get_prev_full_prob() + lm_weight;
+        return get_prev_full_prob() + lm_score;
     }
+
+    void next_step() {
+        prev_prob_blank = cur_prob_blank;
+        prev_prob_not_blank = cur_prob_not_blank;
+        cur_prob_blank = -INFINITY;
+        cur_prob_not_blank = -INFINITY;
+    }
+
+    void repr() {
+//        std::cout << "\"" << indices2str(get_sentence()) << "\": " << std::exp(get_prev_full_prob())
+//                      << ", " << get_prev_full_prob()
+//                      << " | " << lm_weight << " " << prev_prob_blank << " "
+//                      << prev_prob_not_blank << "\n";
+    };
 };
 
 
 std::tuple<std::vector<int>, int, std::string>
-CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
+CTCDecoder::decode_sentence(const at::TensorAccessor<double, 2>& logits_a, int sequence_len) {
     // Prefix beam search: https://arxiv.org/pdf/1408.2873.pdf
-    auto logits_a = logits_2d.accessor<float, 2>(); // TODO: convert to double?
-    auto alphabet_size = static_cast<int>(logits_2d.size(1));
+    auto alphabet_size = static_cast<int>(logits_a.size(1));
 
     // NB: prob - log-probabilities
     std::vector<std::shared_ptr<Prefix>> prefixes;
@@ -265,6 +289,7 @@ CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
         auto cur_log_prob_blank = logits_a[l][blank_idx];
 
         std::vector<std::shared_ptr<Prefix>> new_prefixes;
+        new_prefixes.reserve(prefixes.size() * alphabet_size);
         // for every character
         for (int char_id = 0; char_id < alphabet_size; char_id++) {
             auto cur_prob = logits_a[l][char_id];
@@ -296,49 +321,37 @@ CTCDecoder::decode_sentence(const at::Tensor& logits_2d, int sequence_len) {
                         auto new_prefix_sentence = new_prefix->get_sentence();
                         // TODO: score only if char_id == space_idx
                         if (lm_model != nullptr && !is_empty_sentence(new_prefix_sentence)) {
-                            new_prefix->lm_weight = get_score_for_sentence(new_prefix_sentence) * lmwt;
+                            new_prefix->lm_score = get_score_for_sentence(new_prefix_sentence) * lmwt;
                         }
                     }
                 }
             } // end for: prefixes
         } // end for: characters
-//        std::cout << "step: " << l << std::endl;
+
         prefixes.reserve(prefixes.size() + new_prefixes.size());
-        prefixes.insert(prefixes.end(), new_prefixes.begin(), new_prefixes.end());
-        for (auto& prefix: prefixes) {
-            prefix->prev_prob_blank = prefix->cur_prob_blank;
-            prefix->prev_prob_not_blank = prefix->cur_prob_not_blank;
-            prefix->cur_prob_blank = -INFINITY;
-            prefix->cur_prob_not_blank = -INFINITY;
+        prefixes.insert(prefixes.end(),
+                std::make_move_iterator(new_prefixes.begin()),
+                std::make_move_iterator(new_prefixes.end()));
 
-//            std::cout << "\"" << indices2str(prefix->get_sentence()) << "\": " << std::exp(prefix->get_prev_full_prob())
-//                      << ", " << prefix->get_prev_full_prob()
-//                      << " | " << prefix->lm_weight << " " << prefix->prev_prob_blank << " "
-//                      << prefix->prev_prob_not_blank << "\n";
-        }
+        for (auto& prefix: prefixes)
+            prefix->next_step();
 
-        std::sort(prefixes.begin(), prefixes.end(),
-                  [](const std::shared_ptr<Prefix>& lhs, const std::shared_ptr<Prefix>& rhs) {
-                      return lhs->get_prev_full_prob_with_lmwt() > rhs->get_prev_full_prob_with_lmwt();
-                  });
-
-
-        if (prefixes.size() > beam_width)
+        if (prefixes.size() > beam_width) {
+            std::nth_element(prefixes.begin(), std::next(prefixes.begin(), beam_width), prefixes.end(),
+                             [](const std::shared_ptr<Prefix>& lhs, const std::shared_ptr<Prefix>& rhs) {
+                                 return lhs->get_prev_full_prob_with_lmwt() > rhs->get_prev_full_prob_with_lmwt();
+                             });
             prefixes.resize(static_cast<size_t>(beam_width));
+        }
     } // end for: timestep
 
-//    std::cout << "=======================" << std::endl;
-//    std::cout << "=======================" << std::endl;
+    std::sort(prefixes.begin(), prefixes.end(),
+              [](const std::shared_ptr<Prefix>& lhs, const std::shared_ptr<Prefix>& rhs) {
+                  return lhs->get_prev_full_prob_with_lmwt() > rhs->get_prev_full_prob_with_lmwt();
+              });
+
     std::vector<int> result_sequence{prefixes[0]->get_sentence()};
     std::string result_sequence_str = indices2str(result_sequence);
-    for (int i = 0; i < std::min(20, static_cast<int>(prefixes.size())); i++) {
-        const auto& prefix = prefixes[i];
-//        std::cout << "\"" << indices2str(prefix->get_sentence()) << "\": " << std::exp(prefix->get_prev_full_prob())
-//                  << ", " << prefix->get_prev_full_prob()
-//                  << " | " << prefix->lm_weight << " " << prefix->prev_prob_blank << " "
-//                  << prefix->prev_prob_not_blank << "\n";
-    }
-//    std::cout << "=======================" << std::endl;
 
     return {result_sequence, static_cast<int>(result_sequence.size()), result_sequence_str};
 }
@@ -348,32 +361,42 @@ std::tuple<
         at::Tensor,
         std::vector<std::string>
 > CTCDecoder::decode_greedy(
-        const at::Tensor& logits,
-        const at::Tensor& logits_lengths) {
+        const at::Tensor& logits_,
+        const at::Tensor& logits_lengths_) {
     // collapse repeated, remove blank
-    auto batch_size = logits_lengths.size(0);
-    auto argmax_logits = logits.argmax(-1);
+    const auto src_device = logits_.device();
+    const auto work_device = torch::kCPU;
+
+    const auto logits_lengths = logits_lengths_.to(work_device).to(torch::kLong);
+    const auto batch_size = logits_lengths.size(0);
+    const auto argmax_logits = logits_.argmax(-1).to(work_device);
     auto decoded_targets = at::zeros_like(argmax_logits);
     auto decoded_targets_lengths = at::zeros_like(logits_lengths);
     std::vector<std::string> decoded_sentences(static_cast<size_t>(batch_size), "");
 
+    const auto logits_lengths_a = logits_lengths.accessor<int64_t, 1>();
+    auto argmax_logits_a = argmax_logits.accessor<int64_t, 2>();
+    auto decoded_targets_a = decoded_targets.accessor<int64_t, 2>();
+    auto decoded_targets_lengths_a = decoded_targets_lengths.accessor<int64_t, 1>();
+
+
     {
         ThreadPool pool{static_cast<size_t>(batch_size)};
         for (int i = 0; i < batch_size; i++) {
-            pool.add_task([this, &argmax_logits, &logits_lengths, i,
-                                  &decoded_targets, &decoded_targets_lengths, &decoded_sentences] {
+            pool.add_task([this, &argmax_logits_a, &logits_lengths_a, i,
+                                  &decoded_targets_a, &decoded_targets_lengths_a, &decoded_sentences] {
                 auto prev_symbol = blank_idx;
                 auto current_len = 0;
-                for (int j = 0; j < logits_lengths[i].item<int>(); j++) {
-                    const auto current_symbol = argmax_logits[i][j].item<int>();
+                for (int j = 0; j < logits_lengths_a[i]; j++) {
+                    const auto current_symbol = argmax_logits_a[i][j];
                     if (current_symbol != blank_idx && prev_symbol != current_symbol) {
-                        decoded_targets[i][current_len] = current_symbol;
+                        decoded_targets_a[i][current_len] = current_symbol;
                         current_len++;
                     }
                     prev_symbol = current_symbol;
                 }
-                decoded_sentences[i] = indices2str(decoded_targets[i], current_len);
-                decoded_targets_lengths[i] = current_len;
+                decoded_sentences[i] = indices2str(decoded_targets_a[i], current_len);
+                decoded_targets_lengths_a[i] = current_len;
             });
         }
     }
