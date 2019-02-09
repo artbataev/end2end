@@ -1,5 +1,6 @@
 import os
 import sys
+from collections import namedtuple
 
 import torch
 
@@ -13,6 +14,11 @@ import cpp_ctc_decoder
 
 class CTCDecoderError(Exception):
     pass
+
+
+DecoderResults = namedtuple("DecoderResults", ["decoded_targets",
+                                               "decoded_targets_lengths",
+                                               "decoded_sentences"])
 
 
 class CTCDecoder:
@@ -61,7 +67,7 @@ class CTCDecoder:
             of shape ``(sequence_length, batch_size, alphabet_size)`` if ``time_major`` \n
             else of shape ``(batch_size, sequence_length, alphabet_size)``
         :param logits_lengths: default ``None``
-        :return: ``(decoded_targets, decoded_targets_lengths, decoded_sentences)`` \n
+        :return: ``namedtuple(decoded_targets, decoded_targets_lengths, decoded_sentences)`` \n
             decoded_targets:
                 tensor with result targets of shape ``(batch_size, sequence_length)``,
                 doesn't contain blank symbols \n
@@ -88,7 +94,7 @@ class CTCDecoder:
             logits=logits,
             logits_lengths=logits_lengths)
 
-        return decoded_targets, decoded_targets_lengths, decoded_sentences
+        return DecoderResults(decoded_targets, decoded_targets_lengths, decoded_sentences)
 
     def _print_scores_for_sentence(self, words):
         self._decoder.print_scores_for_sentence(words)
@@ -125,4 +131,4 @@ class CTCDecoder:
             logits=logits,
             logits_lengths=logits_lengths)
 
-        return decoded_targets, decoded_targets_lengths, decoded_sentences
+        return DecoderResults(decoded_targets, decoded_targets_lengths, decoded_sentences)
