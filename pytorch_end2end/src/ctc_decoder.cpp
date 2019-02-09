@@ -2,7 +2,7 @@
 #include <string>
 #include <map>
 #include <iostream>
-#include <algorithm>
+#include <functional>
 
 // pytorch
 #include <torch/extension.h>
@@ -14,6 +14,7 @@
 #include "ctc_decoder.h"
 #include "threadpool.h"
 
+const double LOG_E_10 = std::log(10.0);
 
 class CustomEnumerateVocab : public lm::EnumerateVocab {
 public:
@@ -94,7 +95,7 @@ double CTCDecoder::get_score_for_sentence(std::vector<std::string> words) {
         result = lm_model->Score(state, word_idx, out_state);
         state = out_state;
     }
-    return result - words.size() * wip;
+    return result / LOG_E_10;
 }
 
 double CTCDecoder::get_score_for_sentence(const std::vector<int>& sentence) {
@@ -206,37 +207,28 @@ using prefix_key_t = std::vector<int>;
 
 class Prefix : public std::enable_shared_from_this<Prefix> {
 public:
-    Prefix() : cur_prob_blank{-INFINITY},
-               cur_prob_not_blank{-INFINITY},
+    Prefix() : prob_blank{-INFINITY},
+               prob_not_blank{-INFINITY},
                prev_prob_blank{-INFINITY},
                prev_prob_not_blank{-INFINITY},
                last_char{0},
                next_data{},
                parent{nullptr},
-               lm_score{-20000} {}
+               lm_score{0},
+               sentence{} {}
 
-    double cur_prob_blank;
-    double cur_prob_not_blank;
+    double prob_blank;
+    double prob_not_blank;
     double prev_prob_blank;
     double prev_prob_not_blank;
     int last_char;
     double lm_score;
+    int num_words{0};
+    std::vector<int> sentence;
     std::shared_ptr<Prefix> parent;
     std::map<int, std::weak_ptr<Prefix>> next_data;
 
-    std::vector<int> get_sentence() {
-        std::vector<int> result;
-        auto cur_char = last_char;
-        auto cur_parent = parent;
-        while (last_char >= 0 && cur_parent != nullptr) {
-            result.emplace_back(cur_char);
-            cur_char = cur_parent->last_char;
-            cur_parent = cur_parent->parent;
-        }
-        return {result.rbegin(), result.rend()};
-    }
-
-    std::pair<std::shared_ptr<Prefix>, bool> get_next(int char_id) {
+    std::pair<std::shared_ptr<Prefix>, bool> get_next(int char_id, int space_id) {
         if (next_data.count(char_id) > 0)
             if (auto next_prefix = next_data.at(char_id).lock())
                 return {next_prefix, false};
@@ -244,7 +236,11 @@ public:
         auto new_prefix = std::make_shared<Prefix>();
         next_data[char_id] = new_prefix;
         new_prefix->last_char = char_id;
-        new_prefix->lm_score = lm_score;
+        new_prefix->sentence = sentence; // copy
+        new_prefix->sentence.emplace_back(char_id);
+        new_prefix->num_words = num_words;
+        if (char_id == space_id)
+            new_prefix->num_words++;
         new_prefix->parent = shared_from_this();
         return {new_prefix, true};
     }
@@ -253,22 +249,22 @@ public:
         return log_sum_exp(prev_prob_not_blank, prev_prob_blank);
     }
 
-    double get_prev_full_prob_with_lmwt() const {
-        return get_prev_full_prob() + lm_score;
+    double get_prev_full_prob_with_lmwt(double lmwt, double wip) const {
+        return get_prev_full_prob() + lm_score * lmwt - num_words * wip;
     }
 
     void next_step() {
-        prev_prob_blank = cur_prob_blank;
-        prev_prob_not_blank = cur_prob_not_blank;
-        cur_prob_blank = -INFINITY;
-        cur_prob_not_blank = -INFINITY;
+        prev_prob_blank = prob_blank;
+        prev_prob_not_blank = prob_not_blank;
+        prob_blank = -INFINITY;
+        prob_not_blank = -INFINITY;
     }
 
-    void repr() {
-//        std::cout << "\"" << indices2str(get_sentence()) << "\": " << std::exp(get_prev_full_prob())
-//                      << ", " << get_prev_full_prob()
-//                      << " | " << lm_weight << " " << prev_prob_blank << " "
-//                      << prev_prob_not_blank << "\n";
+    void repr(std::function<std::string(std::vector<int>)>& indices2str) {
+        std::cout << "\"" << indices2str(sentence) << "\": \n";
+        std::cout << "words: " << num_words << " | prob: " << std::exp(get_prev_full_prob())
+                  << ", " << get_prev_full_prob();
+        std::cout << " | lm_score: " << lm_score << "\n";
     };
 };
 
@@ -285,10 +281,11 @@ CTCDecoder::decode_sentence(const at::TensorAccessor<double, 2>& logits_a, int s
     prefixes.emplace_back(init_prefix);
 
     // at every timestep
+    std::vector<std::shared_ptr<Prefix>> new_prefixes;
+
     for (int l = 0; l < sequence_len; l++) {
         auto cur_log_prob_blank = logits_a[l][blank_idx];
 
-        std::vector<std::shared_ptr<Prefix>> new_prefixes;
         new_prefixes.reserve(prefixes.size() * alphabet_size);
         // for every character
         for (int char_id = 0; char_id < alphabet_size; char_id++) {
@@ -296,33 +293,31 @@ CTCDecoder::decode_sentence(const at::TensorAccessor<double, 2>& logits_a, int s
             // for every prefix
             for (auto& prefix: prefixes) {
                 if (char_id == blank_idx) {
-                    prefix->cur_prob_blank = log_sum_exp(prefix->cur_prob_blank,
-                                                         cur_prob + prefix->get_prev_full_prob());
+                    prefix->prob_blank = log_sum_exp(prefix->prob_blank,
+                                                     cur_prob + prefix->get_prev_full_prob());
                 } else {
-                    auto new_prefix_res = prefix->get_next(char_id);
+                    auto new_prefix_res = prefix->get_next(char_id, space_idx);
                     auto new_prefix = new_prefix_res.first;
                     auto is_new = new_prefix_res.second;
-                    if (is_new)
+                    if (is_new) {
                         new_prefixes.emplace_back(new_prefix);
+                        if (lm_model != nullptr && new_prefix->num_words > 0) {
+                            new_prefix->lm_score = get_score_for_sentence(new_prefix->sentence);
+                        }
+                    }
 
                     if (char_id == prefix->last_char) { // repeated character
-                        new_prefix->cur_prob_not_blank = log_sum_exp(
-                                new_prefix->cur_prob_not_blank,
+                        new_prefix->prob_not_blank = log_sum_exp(
+                                new_prefix->prob_not_blank,
                                 cur_prob + prefix->prev_prob_blank);
-                        prefix->cur_prob_not_blank = log_sum_exp(
-                                prefix->cur_prob_not_blank,
+                        prefix->prob_not_blank = log_sum_exp(
+                                prefix->prob_not_blank,
                                 cur_prob + prefix->prev_prob_not_blank);
+                        new_prefix->lm_score = prefix->lm_score;
                     } else {
-                        new_prefix->cur_prob_not_blank = log_sum_exp(
-                                new_prefix->cur_prob_not_blank,
+                        new_prefix->prob_not_blank = log_sum_exp(
+                                new_prefix->prob_not_blank,
                                 cur_prob + prefix->get_prev_full_prob());
-
-                        // lm weight
-                        auto new_prefix_sentence = new_prefix->get_sentence();
-                        // TODO: score only if char_id == space_idx
-                        if (lm_model != nullptr && !is_empty_sentence(new_prefix_sentence)) {
-                            new_prefix->lm_score = get_score_for_sentence(new_prefix_sentence) * lmwt;
-                        }
                     }
                 }
             } // end for: prefixes
@@ -330,27 +325,35 @@ CTCDecoder::decode_sentence(const at::TensorAccessor<double, 2>& logits_a, int s
 
         prefixes.reserve(prefixes.size() + new_prefixes.size());
         prefixes.insert(prefixes.end(),
-                std::make_move_iterator(new_prefixes.begin()),
-                std::make_move_iterator(new_prefixes.end()));
+                        std::make_move_iterator(new_prefixes.begin()),
+                        std::make_move_iterator(new_prefixes.end()));
+        new_prefixes.resize(0);
 
         for (auto& prefix: prefixes)
             prefix->next_step();
 
         if (prefixes.size() > beam_width) {
             std::nth_element(prefixes.begin(), std::next(prefixes.begin(), beam_width), prefixes.end(),
-                             [](const std::shared_ptr<Prefix>& lhs, const std::shared_ptr<Prefix>& rhs) {
-                                 return lhs->get_prev_full_prob_with_lmwt() > rhs->get_prev_full_prob_with_lmwt();
+                             [this](const std::shared_ptr<Prefix>& lhs, const std::shared_ptr<Prefix>& rhs) {
+                                 return lhs->get_prev_full_prob_with_lmwt(lmwt, wip) >
+                                        rhs->get_prev_full_prob_with_lmwt(lmwt, wip);
                              });
             prefixes.resize(static_cast<size_t>(beam_width));
         }
     } // end for: timestep
 
     std::sort(prefixes.begin(), prefixes.end(),
-              [](const std::shared_ptr<Prefix>& lhs, const std::shared_ptr<Prefix>& rhs) {
-                  return lhs->get_prev_full_prob_with_lmwt() > rhs->get_prev_full_prob_with_lmwt();
+              [this](const std::shared_ptr<Prefix>& lhs, const std::shared_ptr<Prefix>& rhs) {
+                  return lhs->get_prev_full_prob_with_lmwt(lmwt, wip) > rhs->get_prev_full_prob_with_lmwt(lmwt, wip);
               });
 
-    std::vector<int> result_sequence{prefixes[0]->get_sentence()};
+//    for (auto& prefix: prefixes) {
+//        prefix->repr([this](std::vector<int> s) {
+//            return indices2str(s);
+//        });
+//    }
+
+    std::vector<int> result_sequence{prefixes[0]->sentence};
     std::string result_sequence_str = indices2str(result_sequence);
 
     return {result_sequence, static_cast<int>(result_sequence.size()), result_sequence_str};
