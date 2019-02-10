@@ -12,7 +12,7 @@ find_package(Torch REQUIRED)
 add_subdirectory(third_party/pybind11)
 
 set(CMAKE_CXX_STANDARD 11)
-
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 find_package(Threads)
@@ -21,6 +21,7 @@ find_package(Threads)
 add_subdirectory(third_party/kenlm)
 include_directories(third_party/kenlm)
 
+# inner libraries
 add_library(threadpool
         pytorch_end2end/src/threadpool.cpp
         pytorch_end2end/src/threadpool.h)
@@ -34,14 +35,30 @@ target_link_libraries(inner_math_utils
         PRIVATE pybind11::module
         PRIVATE ${TORCH_LIBRARIES})
 
-add_library(cpp_ctc_decoder MODULE
-        pytorch_end2end/src/ctc_decoder.cpp
-        pytorch_end2end/src/ctc_decoder.h)
 
+# CTC loss
 add_library(cpp_ctc_loss MODULE
         pytorch_end2end/src/ctc_loss.cpp
         pytorch_end2end/src/ctc_loss.h)
 
+target_link_libraries(cpp_ctc_loss
+        PRIVATE threadpool
+        PRIVATE inner_math_utils
+        PRIVATE pybind11::module
+        PRIVATE ${TORCH_LIBRARIES}
+        )
+
+set_target_properties(cpp_ctc_loss PROPERTIES
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED YES
+        PREFIX "${PYTHON_MODULE_PREFIX}"
+        SUFFIX "${PYTHON_MODULE_EXTENSION}")
+
+
+# Decoder
+add_library(cpp_ctc_decoder MODULE
+        pytorch_end2end/src/ctc_decoder.cpp
+        pytorch_end2end/src/ctc_decoder.h)
 
 target_link_libraries(cpp_ctc_decoder
         PRIVATE threadpool
@@ -51,17 +68,8 @@ target_link_libraries(cpp_ctc_decoder
         PRIVATE kenlm
         )
 
-set_property(TARGET cpp_ctc_decoder PROPERTY CXX_STANDARD 11)
-set_target_properties(cpp_ctc_decoder PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
-        SUFFIX "${PYTHON_MODULE_EXTENSION}")
-
-target_link_libraries(cpp_ctc_loss
-        PRIVATE threadpool
-        PRIVATE inner_math_utils
-        PRIVATE pybind11::module
-        PRIVATE ${TORCH_LIBRARIES}
-        )
-
-set_property(TARGET cpp_ctc_loss PROPERTY CXX_STANDARD 11)
-set_target_properties(cpp_ctc_loss PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+set_target_properties(cpp_ctc_decoder PROPERTIES
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED YES
+        PREFIX "${PYTHON_MODULE_PREFIX}"
         SUFFIX "${PYTHON_MODULE_EXTENSION}")

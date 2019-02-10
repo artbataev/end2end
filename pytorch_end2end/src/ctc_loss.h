@@ -2,21 +2,21 @@
 
 #include <torch/extension.h>
 
-class CTCLossWrapper {
+class CTCLossEngine {
 public:
-    explicit CTCLossWrapper(int blank_idx_);
+    explicit CTCLossEngine(int blank_idx_);
 
     std::tuple<
             at::Tensor,
             at::Tensor
-    > ctc_loss_forward(
+    > compute(
             const at::Tensor& logits,
             const at::Tensor& targets,
             const at::Tensor& logits_lengths,
             const at::Tensor& targets_lengths);
 
 private:
-    void _ctc_loss_forward_2d(
+    void compute_2d(
             const torch::Tensor& logits_2d,
             const torch::TensorAccessor<int64_t, 1>& targets_1d_a,
             int seq_len, int targets_len,
@@ -30,8 +30,8 @@ private:
 PYBIND11_MODULE(cpp_ctc_loss, m) {
     namespace py = pybind11;
     using namespace pybind11::literals;
-    py::class_<CTCLossWrapper>(m, "CTCLossWrapper").
+    py::class_<CTCLossEngine>(m, "CTCLossEngine").
             def(py::init<int>(), "blank_idx"_a).
-            def("ctc_loss_forward", &CTCLossWrapper::ctc_loss_forward, "CTC loss forward and grads", "logits"_a,
+            def("compute", &CTCLossEngine::compute, "CTC loss forward and grads", "logits"_a,
                 "targets"_a, "logits_lengths"_a, "targets_lengths"_a);
 }

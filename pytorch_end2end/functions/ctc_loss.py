@@ -25,8 +25,8 @@ class CTCLossFunction(Function):
         :param blank_idx: id of blank label, default 0
         :return: tensor with loss of shape [batch_size]
         """
-        ctc_engine = cpp_ctc_loss.CTCLossWrapper(blank_idx)
-        loss, grads = ctc_engine.ctc_loss_forward(logits, targets, logits_lengths, targets_lengths)
+        ctc_engine = cpp_ctc_loss.CTCLossEngine(blank_idx)
+        loss, grads = ctc_engine.compute(logits, targets, logits_lengths, targets_lengths)
         ctx.grads = grads
         return loss
 

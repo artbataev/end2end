@@ -3,9 +3,9 @@
 #include "math_utils.h"
 #include "threadpool.h"
 
-CTCLossWrapper::CTCLossWrapper(int blank_idx_) : blank_idx{blank_idx_} {}
+CTCLossEngine::CTCLossEngine(int blank_idx_) : blank_idx{blank_idx_} {}
 
-void CTCLossWrapper::_ctc_loss_forward_2d(
+void CTCLossEngine::compute_2d(
         const torch::Tensor& logits_2d,
         const torch::TensorAccessor<int64_t, 1>& targets_1d_a,
         int seq_len, int targets_len,
@@ -20,7 +20,7 @@ void CTCLossWrapper::_ctc_loss_forward_2d(
     auto extended_targets_a = extended_targets.accessor<int64_t, 1>();
 
     for (int i = 0; i < targets_len; i++)
-        extended_targets[i * 2 + 1] = targets_1d_a[i];
+        extended_targets_a[i * 2 + 1] = targets_1d_a[i];
 
     // forward - alpha
     auto log_alpha = torch::full({ext_targets_len, seq_len}, -INFINITY,
@@ -103,7 +103,7 @@ void CTCLossWrapper::_ctc_loss_forward_2d(
 std::tuple<
         at::Tensor,
         at::Tensor
-> CTCLossWrapper::ctc_loss_forward(
+> CTCLossEngine::compute(
         const at::Tensor& logits_,
         const at::Tensor& targets_,
         const at::Tensor& logits_lengths_,
@@ -135,7 +135,7 @@ std::tuple<
             auto seq_len = logits_lengths_a[i];
             auto targets_len = targets_lengths_a[i];
             pool.add_task([this, &logits, &targets_a, i, seq_len, targets_len, &losses, &grads] {
-                _ctc_loss_forward_2d(logits[i], targets_a[i],
+                compute_2d(logits[i], targets_a[i],
                                      seq_len, targets_len,
                                      i, losses, grads);
             });
