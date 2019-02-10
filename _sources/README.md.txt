@@ -76,6 +76,7 @@ loss.backward()
 ### CTC Decoder
 ```python
 import torch
+import torch.nn.functional as F
 from pytorch_end2end import CTCDecoder
 
 batch_size = 4
@@ -86,7 +87,7 @@ decoder = CTCDecoder(blank_idx=0, beam_width=100, time_major=False,
 logits = torch.randn(batch_size, 50, alphabet_size).detach()
 logits_lengths = torch.full((batch_size,), 50, dtype=torch.long)
 
-decoded_targets, decoded_targets_lengths, decoded_sentences = decoder.decode(logits, logits_lengths)
+decoded_targets, decoded_targets_lengths, decoded_sentences = decoder.decode(F.log_softmax(logits, -1), logits_lengths)
 for sentence in decoded_sentences:
     print(sentence)
 ```
