@@ -43,12 +43,14 @@ CTCDecoder::CTCDecoder(int blank_idx_, int beam_width_ = 100,
                        const std::string& lm_path = "",
                        double lmwt_ = 1.0,
                        double wip_ = 0.0,
+                       double oov_penalty_ = -1000.0,
                        bool case_sensitive_ = false) :
         blank_idx(blank_idx_),
         beam_width{beam_width_},
         space_idx{-1},
         lmwt{lmwt_},
         wip{wip_},
+        oov_penalty{oov_penalty_},
         labels(std::move(labels_)), case_sensitive(case_sensitive_) {
     if (!labels.empty()) {
         space_idx = static_cast<int>(std::distance(labels.begin(), std::find(labels.begin(), labels.end(), " ")));
@@ -89,13 +91,16 @@ double CTCDecoder::get_score_for_sentence(std::vector<std::string> words) {
         return 0;
 
     double result = 0;
+    double penalty = 0;
     lm_state_t state(lm_model->BeginSentenceState()), out_state;
     for (const auto& word: words) {
         auto word_idx = get_idx(word);
-        result = lm_model->Score(state, word_idx, out_state);
+        result += lm_model->BaseScore(&state, word_idx, &out_state); // ? Score
         state = out_state;
+        if (word_idx == 0)
+            penalty += oov_penalty;
     }
-    return result / LOG_E_10;
+    return result / LOG_E_10 + penalty;
 }
 
 double CTCDecoder::get_score_for_sentence(const std::vector<int>& sentence) {
@@ -107,6 +112,7 @@ double CTCDecoder::get_score_for_sentence(const std::vector<int>& sentence) {
     for (const auto& c_id: sentence) {
         if (c_id == blank_idx) // first
             continue;
+
         if (c_id != space_idx)
             word += labels[c_id];
         else if (!word.empty()) {
@@ -118,14 +124,8 @@ double CTCDecoder::get_score_for_sentence(const std::vector<int>& sentence) {
         words.emplace_back(word);
     if (!words.empty())
         return get_score_for_sentence(words);
+    throw std::logic_error("incorrect scoring: empty sentence");
     return 0;
-}
-
-bool CTCDecoder::is_empty_sentence(const std::vector<int>& sentence) {
-    for (const auto& c: sentence)
-        if (c != blank_idx && c != space_idx)
-            return false;
-    return true;
 }
 
 void CTCDecoder::print_scores_for_sentence(std::vector<std::string> words) {
@@ -239,8 +239,14 @@ public:
         new_prefix->sentence = sentence; // copy
         new_prefix->sentence.emplace_back(char_id);
         new_prefix->num_words = num_words;
-        if (char_id == space_id)
-            new_prefix->num_words++;
+        if (num_words == 0) {
+            if (char_id != space_id)
+                new_prefix->num_words++;
+        } else {
+            if (char_id == space_id && sentence[sentence.size() - 1] != space_id)
+                new_prefix->num_words++;
+        }
+
         new_prefix->parent = shared_from_this();
         return {new_prefix, true};
     }
@@ -260,7 +266,7 @@ public:
         prob_not_blank = -INFINITY;
     }
 
-    void repr(std::function<std::string(std::vector<int>)>& indices2str) {
+    void repr(std::function<std::string(const std::vector<int>&)> indices2str) {
         std::cout << "\"" << indices2str(sentence) << "\": \n";
         std::cout << "words: " << num_words << " | prob: " << std::exp(get_prev_full_prob())
                   << ", " << get_prev_full_prob();
@@ -297,8 +303,8 @@ CTCDecoder::decode_sentence(const at::TensorAccessor<double, 2>& logits_a, int s
                                                      cur_prob + prefix->get_prev_full_prob());
                 } else {
                     auto new_prefix_res = prefix->get_next(char_id, space_idx);
-                    auto new_prefix = new_prefix_res.first;
-                    auto is_new = new_prefix_res.second;
+                    auto& new_prefix = new_prefix_res.first;
+                    auto& is_new = new_prefix_res.second;
                     if (is_new) {
                         new_prefixes.emplace_back(new_prefix);
                         if (lm_model != nullptr && new_prefix->num_words > 0) {
@@ -348,10 +354,12 @@ CTCDecoder::decode_sentence(const at::TensorAccessor<double, 2>& logits_a, int s
               });
 
 //    for (auto& prefix: prefixes) {
-//        prefix->repr([this](std::vector<int> s) {
+//        prefix->repr([this](const std::vector<int>& s) {
 //            return indices2str(s);
 //        });
 //    }
+
+//    std::cout << "-->" << get_score_for_sentence(prefixes[0]->sentence) << "\n";
 
     std::vector<int> result_sequence{prefixes[0]->sentence};
     std::string result_sequence_str = indices2str(result_sequence);

@@ -13,7 +13,7 @@ class CTCDecoder {
 public:
     CTCDecoder(int blank_idx_, int beam_width_,
                std::vector<std::string> labels_,
-               const std::string& lm_path, double lmwt_, double wip_, bool case_sensitive_);
+               const std::string& lm_path, double lmwt_, double wip_, double oov_penalty_, bool case_sensitive_);
 
     lm::WordIndex get_idx(const std::string& word);
 
@@ -40,6 +40,7 @@ private:
     bool case_sensitive;
     double lmwt;
     double wip;
+    double oov_penalty;
     std::vector<std::string> labels;
     std::unique_ptr<lm::ngram::ProbingModel> lm_model;
     word2index_t word2index;
@@ -49,7 +50,6 @@ private:
     double get_score_for_sentence(std::vector<std::string> words);
     std::string indices2str(const std::vector<int>& char_ids);
     std::string indices2str(const at::TensorAccessor<int64_t, 1>& char_ids, int len);
-    bool is_empty_sentence(const std::vector<int>& sentence);
     double get_score_for_sentence(const std::vector<int>& sentence);
 };
 
@@ -58,13 +58,14 @@ PYBIND11_MODULE(cpp_ctc_decoder, m) {
     namespace py = pybind11;
     using namespace pybind11::literals;
     py::class_<CTCDecoder>(m, "CTCDecoder").
-            def(py::init<int, int, std::vector<std::string>, std::string, double, double, bool>(),
+            def(py::init<int, int, std::vector<std::string>, std::string, double, double, double, bool>(),
                 "blank_idx"_a,
                 "beam_width_"_a = 100,
                 "labels"_a = std::vector<std::string>{},
                 "lm_path"_a = "",
                 "lmwt_"_a = 1.0,
                 "wip_"_a = 0.0,
+                "oov_penalty_"_a = -1000.0,
                 "case_sensitive"_a = false).
             def("decode_greedy", &CTCDecoder::decode_greedy, "Decode greedy", "logits_"_a, "logits_lengths_"_a).
             def("decode", &CTCDecoder::decode, "Decode greedy", "logits_"_a, "logits_lengths_"_a).

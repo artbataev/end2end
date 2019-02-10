@@ -33,11 +33,13 @@ class CTCDecoder:
     :param lm_path: path to language model (ARPA format or gzipped ARPA)
     :param lmwt: language model weight, default ``1.0``, makes sense only if language model is present
     :param wip: word insertion penalty, default ``1.0``, makes sense only if labels are present
+    :param oov_penalty: penalty for each oov word, default ``-10.0``
     :param case_sensitive: obtain language model scores with respect to case, default ``False``
     """
 
     def __init__(self, beam_width=100, blank_idx=0, time_major=False, labels=None,
                  lm_path=None, lmwt=1.0, wip=1.0,
+                 oov_penalty=-10,
                  case_sensitive=True):
         self._beam_width = beam_width
         self._blank_idx = blank_idx
@@ -45,6 +47,7 @@ class CTCDecoder:
         self._lm_path = os.path.abspath(lm_path) if lm_path else ""
         self._lmwt = lmwt
         self._wip = wip
+        self._oov_penalty = oov_penalty
         self._time_major = time_major
         self._case_sensitive = case_sensitive
 
@@ -52,7 +55,8 @@ class CTCDecoder:
 
         self._decoder = cpp_ctc_decoder.CTCDecoder(self._blank_idx, self._beam_width,
                                                    self._labels,
-                                                   self._lm_path, self._lmwt, self._wip, self._case_sensitive)
+                                                   self._lm_path, self._lmwt, self._wip, self._oov_penalty,
+                                                   self._case_sensitive)
 
     def _check_params(self):
         # TODO: Check all params
