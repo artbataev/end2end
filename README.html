@@ -179,8 +179,6 @@
 <h2>Losses<a class="headerlink" href="#losses" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>[x] CTC (C++, CPU)</li>
-<li>[x] CTC without blank (python / numba), needs refactoring</li>
-<li>[x] Dynamic segmentation with CTC (python), needs refactoring</li>
 </ul>
 </div>
 <div class="section" id="decoders">
@@ -253,18 +251,18 @@ python -m tests.test_ctc_decoder
 <div class="section" id="ctc-decoder">
 <h3>CTC Decoder<a class="headerlink" href="#ctc-decoder" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="kn">as</span> <span class="nn">F</span>
 <span class="kn">from</span> <span class="nn">pytorch_end2end</span> <span class="kn">import</span> <span class="n">CTCDecoder</span>
 
 <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">4</span>
 <span class="n">alphabet_size</span> <span class="o">=</span> <span class="mi">6</span>
-<span class="n">decoder</span> <span class="o">=</span> <span class="n">CTCDecoder</span><span class="p">(</span><span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">beam_width</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> 
-    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">])</span>
+<span class="n">decoder</span> <span class="o">=</span> <span class="n">CTCDecoder</span><span class="p">(</span><span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">beam_width</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> 
+                     <span class="n">time_major</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">after_logsoftmax</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                     <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">])</span>
 
 <span class="n">logits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">alphabet_size</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
 <span class="n">logits_lengths</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,),</span> <span class="mi">50</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
 
-<span class="n">decoded_targets</span><span class="p">,</span> <span class="n">decoded_targets_lengths</span><span class="p">,</span> <span class="n">decoded_sentences</span> <span class="o">=</span> <span class="n">decoder</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">logits_lengths</span><span class="p">)</span>
+<span class="n">decoded_targets</span><span class="p">,</span> <span class="n">decoded_targets_lengths</span><span class="p">,</span> <span class="n">decoded_sentences</span> <span class="o">=</span> <span class="n">decoder</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">sentence</span> <span class="ow">in</span> <span class="n">decoded_sentences</span><span class="p">:</span>
     <span class="k">print</span><span class="p">(</span><span class="n">sentence</span><span class="p">)</span>
 </pre></div>
@@ -275,15 +273,16 @@ python -m tests.test_ctc_decoder
 <div class="section" id="id1">
 <h4>Losses<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li>[ ] CTC without blank (C++, CPU)</li>
 <li>[ ] Gram-CTC</li>
+<li>[ ] CTC without blank (C++, CPU)</li>
 <li>[ ] CTC (Cuda)</li>
+<li>[ ] CTC without blank refactoring</li>
+<li>[ ] Dynamic segmentation with CTC refactoring</li>
 </ul>
 </div>
 <div class="section" id="id2">
 <h4>Decoders<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
-<li>[ ] Speedup CTC Beam Search Decoder</li>
 <li>[ ] Restrict Beam Search with vocabulary</li>
 <li>[ ] Allow custom transcriptions</li>
 <li>[ ] Gram-CTC Beam Search Decoder</li>

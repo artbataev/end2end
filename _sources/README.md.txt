@@ -11,8 +11,6 @@ Under active development.
 
 ## Losses
 - [x] CTC (C++, CPU)
-- [x] CTC without blank (python / numba), needs refactoring
-- [x] Dynamic segmentation with CTC (python), needs refactoring
 
 ## Decoders
 - [x] CTC Greedy Decoder (C++, CPU)
@@ -76,18 +74,18 @@ loss.backward()
 ### CTC Decoder
 ```python
 import torch
-import torch.nn.functional as F
 from pytorch_end2end import CTCDecoder
 
 batch_size = 4
 alphabet_size = 6
-decoder = CTCDecoder(blank_idx=0, beam_width=100, time_major=False, 
-    labels=["_", "a", "b", "c", "d", " "])
+decoder = CTCDecoder(blank_idx=0, beam_width=100, 
+                     time_major=False, after_logsoftmax=False,
+                     labels=["_", "a", "b", "c", "d", " "])
 
 logits = torch.randn(batch_size, 50, alphabet_size).detach()
 logits_lengths = torch.full((batch_size,), 50, dtype=torch.long)
 
-decoded_targets, decoded_targets_lengths, decoded_sentences = decoder.decode(F.log_softmax(logits, -1), logits_lengths)
+decoded_targets, decoded_targets_lengths, decoded_sentences = decoder.decode(logits, logits_lengths)
 for sentence in decoded_sentences:
     print(sentence)
 ```
@@ -95,12 +93,13 @@ for sentence in decoded_sentences:
 ### Future Plans
 
 #### Losses
-- [ ] CTC without blank (C++, CPU)
 - [ ] Gram-CTC
+- [ ] CTC without blank (C++, CPU)
 - [ ] CTC (Cuda)
+- [ ] CTC without blank refactoring
+- [ ] Dynamic segmentation with CTC refactoring
 
 #### Decoders
-- [ ] Speedup CTC Beam Search Decoder
 - [ ] Restrict Beam Search with vocabulary
 - [ ] Allow custom transcriptions
 - [ ] Gram-CTC Beam Search Decoder
