@@ -206,7 +206,7 @@ else of shape <code class="docutils literal notranslate"><span class="pre">(batc
 
 <dl class="class">
 <dt id="pytorch_end2end.CTCDecoder">
-<em class="property">class </em><code class="descclassname">pytorch_end2end.</code><code class="descname">CTCDecoder</code><span class="sig-paren">(</span><em>beam_width=100</em>, <em>blank_idx=0</em>, <em>time_major=False</em>, <em>labels=None</em>, <em>lm_path=None</em>, <em>lmwt=1.0</em>, <em>wip=1.0</em>, <em>oov_penalty=-10</em>, <em>case_sensitive=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pytorch_end2end.</code><code class="descname">CTCDecoder</code><span class="sig-paren">(</span><em>beam_width=100</em>, <em>after_logsoftmax=False</em>, <em>blank_idx=0</em>, <em>time_major=False</em>, <em>labels=None</em>, <em>lm_path=None</em>, <em>lmwt=1.0</em>, <em>wip=1.0</em>, <em>oov_penalty=-10</em>, <em>case_sensitive=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decoder class to perform CTC decoding</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -215,6 +215,10 @@ else of shape <code class="docutils literal notranslate"><span class="pre">(batc
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>beam_width</strong> – <p>width of beam (number of stored hypotheses), default <code class="docutils literal notranslate"><span class="pre">100</span></code>.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">1</span></code>, decoder always perform greedy (argmax) decoding</p>
+</li>
+<li><strong>after_logsoftmax</strong> – <p>if log_logits (logits after log softmax), default <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+<p>(with False decoder expects pure logits, not after softmax).
+Greedy decoding ignores this parameter and can work with pure logits, or after log softmax</p>
 </li>
 <li><strong>blank_idx</strong> – id of blank label, default <code class="docutils literal notranslate"><span class="pre">0</span></code></li>
 <li><strong>time_major</strong> – if logits are time major (else batch major)</li>
