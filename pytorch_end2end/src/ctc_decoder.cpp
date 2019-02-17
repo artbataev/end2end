@@ -125,7 +125,22 @@ double CTCDecoder::get_score_for_sentence(const std::vector<int>& sentence) {
     if (!words.empty())
         return get_score_for_sentence(words);
     throw std::logic_error("incorrect scoring: empty sentence");
-    return 0;
+}
+
+
+double CTCDecoder::get_score_for_sentence(const std::vector<std::vector<int>>& words_int) {
+    if (lm_model == nullptr)
+        return 0;
+
+    std::vector<std::string> words{words_int.size(), ""};
+    std::string word;
+    for (int i = 0; i < words_int.size(); i++) {
+        for (const auto& c_id: words_int[i])
+            words[i] += labels[c_id];
+    }
+    if (!words.empty())
+        return get_score_for_sentence(words);
+    throw std::logic_error("incorrect scoring: empty sentence");
 }
 
 void CTCDecoder::print_scores_for_sentence(std::vector<std::string> words) {
@@ -211,7 +226,8 @@ public:
                prob_not_blank{-INFINITY},
                prev_prob_blank{-INFINITY},
                prev_prob_not_blank{-INFINITY},
-               last_char{0},
+               need_words{false},
+               last_char{-1},
                next_data{},
                parent{nullptr},
                lm_score{0},
@@ -224,9 +240,26 @@ public:
     int last_char;
     double lm_score;
     int num_words{0};
+    bool need_words;
     std::vector<int> sentence;
+    std::vector<std::vector<int>> words{};
     std::shared_ptr<Prefix> parent;
     std::map<int, std::weak_ptr<Prefix>> next_data;
+
+    std::vector<int> get_sentence() {
+        std::vector<int> result;
+        result.reserve(num_words * 6);
+        result.emplace_back(last_char);
+        auto& prev = parent;
+        while(prev != nullptr) {
+            if (prev->parent != nullptr) // blank
+                result.emplace_back(prev->last_char);
+            prev = prev->parent;
+        }
+
+        std::reverse(result.begin(), result.end());
+        return result;
+    }
 
     std::pair<std::shared_ptr<Prefix>, bool> get_next(int char_id, int space_id) {
         if (next_data.count(char_id) > 0)
@@ -236,15 +269,19 @@ public:
         auto new_prefix = std::make_shared<Prefix>();
         next_data[char_id] = new_prefix;
         new_prefix->last_char = char_id;
-        new_prefix->sentence = sentence; // copy
-        new_prefix->sentence.emplace_back(char_id);
         new_prefix->num_words = num_words;
-        if (num_words == 0) {
-            if (char_id != space_id)
+        new_prefix->need_words = need_words;
+        if (need_words)
+            new_prefix->words = words; // copy
+        if (char_id != space_id) {
+            if (last_char == space_id || num_words == 0) { // new word
                 new_prefix->num_words++;
-        } else {
-            if (char_id == space_id && sentence[sentence.size() - 1] != space_id)
-                new_prefix->num_words++;
+                if (need_words)
+                    new_prefix->words.emplace_back(std::vector<int>{char_id, });
+            } else {
+                if (need_words)
+                    new_prefix->words[num_words-1].emplace_back(char_id);
+            }
         }
 
         new_prefix->parent = shared_from_this();
@@ -284,6 +321,7 @@ CTCDecoder::decode_sentence(const at::TensorAccessor<double, 2>& logits_a, int s
     std::vector<std::shared_ptr<Prefix>> prefixes;
     auto init_prefix = std::make_shared<Prefix>();
     init_prefix->prev_prob_blank = 0.0;
+    init_prefix->need_words = (lm_model != nullptr);
     prefixes.emplace_back(init_prefix);
 
     // at every timestep
@@ -308,7 +346,7 @@ CTCDecoder::decode_sentence(const at::TensorAccessor<double, 2>& logits_a, int s
                     if (is_new) {
                         new_prefixes.emplace_back(new_prefix);
                         if (lm_model != nullptr && new_prefix->num_words > 0) {
-                            new_prefix->lm_score = get_score_for_sentence(new_prefix->sentence);
+                            new_prefix->lm_score = get_score_for_sentence(new_prefix->words);
                         }
                     }
 
@@ -319,7 +357,6 @@ CTCDecoder::decode_sentence(const at::TensorAccessor<double, 2>& logits_a, int s
                         prefix->prob_not_blank = log_sum_exp(
                                 prefix->prob_not_blank,
                                 cur_prob + prefix->prev_prob_not_blank);
-                        new_prefix->lm_score = prefix->lm_score;
                     } else {
                         new_prefix->prob_not_blank = log_sum_exp(
                                 new_prefix->prob_not_blank,
@@ -361,7 +398,7 @@ CTCDecoder::decode_sentence(const at::TensorAccessor<double, 2>& logits_a, int s
 
 //    std::cout << "-->" << get_score_for_sentence(prefixes[0]->sentence) << "\n";
 
-    std::vector<int> result_sequence{prefixes[0]->sentence};
+    std::vector<int> result_sequence{prefixes[0]->get_sentence()};
     std::string result_sequence_str = indices2str(result_sequence);
 
     return {result_sequence, static_cast<int>(result_sequence.size()), result_sequence_str};

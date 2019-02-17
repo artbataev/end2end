@@ -3,6 +3,7 @@ import sys
 from collections import namedtuple
 
 import torch
+import torch.nn.functional as F
 
 if "DEBUG_E2E" in os.environ:
     module_base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -27,6 +28,9 @@ class CTCDecoder:
 
     :param beam_width: width of beam (number of stored hypotheses), default ``100``. \n
         If ``1``, decoder always perform greedy (argmax) decoding
+    :param after_logsoftmax: if log_logits (logits after log softmax), default ``False`` \n
+        (with False decoder expects pure logits, not after softmax).
+        Greedy decoding ignores this parameter and can work with pure logits, or after log softmax
     :param blank_idx: id of blank label, default ``0``
     :param time_major: if logits are time major (else batch major)
     :param labels: list of strings with labels (including blank symbol), e.g. ``["_", "a", "b", "c"]``
@@ -37,12 +41,13 @@ class CTCDecoder:
     :param case_sensitive: obtain language model scores with respect to case, default ``False``
     """
 
-    def __init__(self, beam_width=100, blank_idx=0, time_major=False, labels=None,
+    def __init__(self, beam_width=100, after_logsoftmax=False, blank_idx=0, time_major=False, labels=None,
                  lm_path=None, lmwt=1.0, wip=1.0,
                  oov_penalty=-10,
                  case_sensitive=True):
         self._beam_width = beam_width
         self._blank_idx = blank_idx
+        self._after_logsoftmax = after_logsoftmax
         self._labels = labels or []
         self._lm_path = os.path.abspath(lm_path) if lm_path else ""
         self._lmwt = lmwt
@@ -87,8 +92,11 @@ class CTCDecoder:
         if self._beam_width == 1:
             return self.decode_greedy(logits, logits_lengths)
 
-        if self._time_major:
-            logits = logits.transpose(1, 0)  # batch_size * sequence_length * alphabet_size
+        with torch.no_grad():
+            if not self._after_logsoftmax:
+                logits = F.log_softmax(logits, -1)
+            if self._time_major:
+                logits = logits.transpose(1, 0)  # batch_size * sequence_length * alphabet_size
         logits = logits.detach().cpu()
         batch_size = logits.size()[0]
         max_sequence_length = logits.size()[1]

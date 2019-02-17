@@ -86,7 +86,7 @@ class TestCTCDecoder(unittest.TestCase):
     # @unittest.skip("")
     def test_with_probs_sm(self):
         labels = ["_", "a"]
-        decoder = CTCDecoder(beam_width=20, blank_idx=0, time_major=False, labels=labels, wip=0.0)
+        decoder = CTCDecoder(beam_width=20, after_logsoftmax=True, blank_idx=0, time_major=False, labels=labels, wip=0.0)
         probs_seq1 = [
             [0.7, 0.3],
             [0.7, 0.3],
@@ -107,7 +107,7 @@ class TestCTCDecoder(unittest.TestCase):
         This is not good test: with small beam should be "acdc", but with large "acb"
         """
         labels = ["\'", ' ', 'a', 'b', 'c', 'd', '_']
-        decoder = CTCDecoder(beam_width=20, blank_idx=6, time_major=False, labels=labels, wip=0.0)
+        decoder = CTCDecoder(beam_width=20, after_logsoftmax=True, blank_idx=6, time_major=False, labels=labels, wip=0.0)
         probs_seq = [[
             [0.06390443, 0.21124858, 0.27323887, 0.06870235, 0.0361254, 0.18184413, 0.16493624],
             [0.03309247, 0.22866108, 0.24390638, 0.09699597, 0.31895462, 0.0094893, 0.06890021],
@@ -138,7 +138,7 @@ class TestCTCDecoder(unittest.TestCase):
         This test is from https://github.com/PaddlePaddle/DeepSpeech/blob/develop/decoders/tests/test_decoders.py
         """
         labels = ["\'", ' ', 'a', 'b', 'c', 'd', '_']
-        decoder = CTCDecoder(beam_width=20, blank_idx=6, time_major=False, labels=labels, wip=0.0)
+        decoder = CTCDecoder(beam_width=20, after_logsoftmax=True, blank_idx=6, time_major=False, labels=labels, wip=0.0)
         probs_seq = [[
             [0.08034842, 0.22671944, 0.05799633, 0.36814645, 0.11307441, 0.04468023, 0.10903471],
             [0.09742457, 0.12959763, 0.09435383, 0.21889204, 0.15113123, 0.10219457, 0.20640612],
@@ -170,11 +170,11 @@ class TestCTCDecoder(unittest.TestCase):
         labels = ["_"] + list(string.ascii_lowercase) + [" "]
         logits = torch.FloatTensor(np.random.rand(1, 50, len(labels)))
         decoder = CTCDecoder(
-            beam_width=100, blank_idx=blank_idx,
+            beam_width=100, after_logsoftmax=False, blank_idx=blank_idx,
             labels=labels, time_major=False,
             lm_path=os.path.join(os.path.dirname(__file__), "librispeech_data",
                                  "librispeech_3-gram_pruned.3e-7.arpa.gz"), lmwt=1.0, wip=0.0, case_sensitive=False)
-        _, _, beam_search_result = decoder.decode(F.log_softmax(logits, -1))
+        _, _, beam_search_result = decoder.decode(logits)
         print(beam_search_result)  # random small words from lexicon
         self.assertListEqual(beam_search_result, ["m r i g a y u h h t m ", ])  # TODO: Test that in vocabulary
 

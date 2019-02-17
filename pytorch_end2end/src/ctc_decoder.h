@@ -51,6 +51,7 @@ private:
     std::string indices2str(const std::vector<int>& char_ids);
     std::string indices2str(const at::TensorAccessor<int64_t, 1>& char_ids, int len);
     double get_score_for_sentence(const std::vector<int>& sentence);
+    double get_score_for_sentence(const std::vector<std::vector<int>>& words_int);
 };
 
 
