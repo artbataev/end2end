@@ -3,9 +3,9 @@ import sys
 
 from torch.autograd import Function
 
-if "DEBUG" in os.environ:
+if "DEBUG_E2E" in os.environ:
     module_base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    build_path = os.path.join(module_base, "cmake-build-debug")
+    build_path = os.path.join(module_base, os.getenv("DEBUG_E2E"))
     sys.path.append(build_path)
 
 import cpp_ctc_loss
