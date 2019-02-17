@@ -5,7 +5,6 @@ import unittest
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 import tqdm
 
 from pytorch_end2end import CTCDecoder
