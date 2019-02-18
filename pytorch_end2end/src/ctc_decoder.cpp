@@ -51,7 +51,9 @@ CTCDecoder::CTCDecoder(int blank_idx_, int beam_width_ = 100,
         lmwt{lmwt_},
         wip{wip_},
         oov_penalty{oov_penalty_},
-        labels(std::move(labels_)), case_sensitive(case_sensitive_) {
+        labels(std::move(labels_)),
+        case_sensitive(case_sensitive_),
+        lm_model{nullptr} {
     if (!labels.empty()) {
         space_id = static_cast<int>(std::distance(labels.begin(), std::find(labels.begin(), labels.end(), " ")));
         if (space_id >= labels.size())
@@ -59,20 +61,21 @@ CTCDecoder::CTCDecoder(int blank_idx_, int beam_width_ = 100,
     }
     if (!lm_path.empty()) {
         auto enumerate_vocab = new CustomEnumerateVocab{};
-        lm::ngram::Config config;
-        config.enumerate_vocab = enumerate_vocab;
-        std::unique_ptr<lm::ngram::ProbingModel> lm_model_(
-                dynamic_cast<lm::ngram::ProbingModel *>(
-                        lm::ngram::LoadVirtual(lm_path.c_str(), config, lm::ngram::PROBING)));
-        lm_model = std::move(lm_model_);
-        if (case_sensitive)
-            word2index = enumerate_vocab->get_word2index();
-        else
-            for (const auto& elem: enumerate_vocab->get_word2index())
-                word2index[str_to_lower(elem.first)] = elem.second;
+        {
+            lm::ngram::Config config;
+            config.enumerate_vocab = enumerate_vocab;
+            lm_model = std::unique_ptr<lm::ngram::ProbingModel>(
+                    dynamic_cast<lm::ngram::ProbingModel *>(
+                            lm::ngram::LoadVirtual(lm_path.c_str(), config, lm::ngram::PROBING)));
+            if (case_sensitive) {
+                word2index = enumerate_vocab->get_word2index();
+            } else {
+                for (const auto& elem: enumerate_vocab->get_word2index())
+                    word2index[str_to_lower(elem.first)] = elem.second;
+            }
+        }
         delete enumerate_vocab;
     } else {
-        lm_model = nullptr;
         lmwt = 0;
     }
 }
@@ -88,7 +91,7 @@ lm::WordIndex CTCDecoder::get_idx(const std::string& word) const {
 
 lm::WordIndex CTCDecoder::get_idx(const std::vector<int>& word_int) const {
     std::stringstream word_s;
-    for(const auto c: word_int)
+    for (const auto c: word_int)
         word_s << labels[c];
     return get_idx(word_s.str());
 }
@@ -228,7 +231,7 @@ std::string CTCDecoder::indices2str(const at::TensorAccessor<int64_t, 1>& char_i
 std::shared_ptr<CTCDecoder::Prefix> CTCDecoder::get_initial_prefix() const {
     auto prefix = std::make_shared<CTCDecoder::Prefix>();
     prefix->prev_prob_blank = 0.0;
-    if(lm_model != nullptr) {
+    if (lm_model != nullptr) {
         prefix->lm_state_before_last = lm_model->BeginSentenceState();
         prefix->lm_state = lm_model->BeginSentenceState();
     }
@@ -265,9 +268,9 @@ std::pair<std::shared_ptr<CTCDecoder::Prefix>, bool> CTCDecoder::get_next_prefix
     if (is_new_word) {
         new_prefix->num_words++;
     }
-    
+
     if (lm_model != nullptr) {
-        if(is_new_word) {
+        if (is_new_word) {
             new_prefix->last_word = {char_id,};
             auto word_idx = get_idx(new_prefix->last_word);
             new_prefix->lm_state_before_last = prefix->lm_state;
@@ -284,12 +287,13 @@ std::pair<std::shared_ptr<CTCDecoder::Prefix>, bool> CTCDecoder::get_next_prefix
             auto word_idx = get_idx(new_prefix->last_word);
             new_prefix->lm_state_before_last = prefix->lm_state_before_last;
             new_prefix->lm_score_before_last = prefix->lm_score_before_last;
-            
-            new_prefix->lm_score += new_prefix->lm_score_before_last + lm_model->BaseScore(&new_prefix->lm_state_before_last,
+
+            new_prefix->lm_score +=
+                    new_prefix->lm_score_before_last + lm_model->BaseScore(&new_prefix->lm_state_before_last,
                                                                            word_idx, &new_prefix->lm_state) / LOG_E_10;
             new_prefix->num_oov_words_before_last = prefix->num_oov_words_before_last;
             new_prefix->num_oov_words = new_prefix->num_oov_words_before_last + (word_idx == 0);
-            
+
         } else { // char_id == space_id, do nothing, just copy
             new_prefix->last_word = prefix->last_word;
             new_prefix->lm_score = prefix->lm_score;
@@ -399,7 +403,8 @@ CTCDecoder::decode_sentence(const at::TensorAccessor<double, 2>& logits_a, int s
         if (prefixes.size() > beam_width) {
             std::nth_element(prefixes.begin(), std::next(prefixes.begin(), beam_width), prefixes.end(),
                              [this](const std::shared_ptr<Prefix>& lhs, const std::shared_ptr<Prefix>& rhs) {
-                                 return get_prev_full_prob_with_lmwt(lhs.get()) > get_prev_full_prob_with_lmwt(rhs.get());
+                                 return get_prev_full_prob_with_lmwt(lhs.get()) >
+                                        get_prev_full_prob_with_lmwt(rhs.get());
                              });
             prefixes.resize(static_cast<size_t>(beam_width));
         }
