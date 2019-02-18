@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import platform
 import subprocess
@@ -61,7 +62,7 @@ class CMakeBuild(build_ext):
         os.chdir(os.path.dirname(extdir))
         self.spawn(["cmake", ext.sourcedir] + cmake_args)
         if not self.dry_run:
-            self.spawn(["cmake", "--build", "."])
+            self.spawn(["cmake", "--build", ".", "--", "-j{}".format(multiprocessing.cpu_count())])
         os.chdir(cwd)
 
 
