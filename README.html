@@ -205,8 +205,9 @@
 </div>
 </li>
 <li><p class="first">Install tools to compile</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo add-apt-repository ppa:ubuntu-toolchain-r-test
-sudo apt-get install cmake libboost-all-dev
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y <span class="o">&amp;&amp;</span> <span class="se">\</span>
+sudo apt-get update <span class="o">&amp;&amp;</span> <span class="se">\</span>
+sudo apt-get install cmake libboost-all-dev g++-7 -y
 </pre></div>
 </div>
 </li>

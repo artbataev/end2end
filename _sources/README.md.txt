@@ -32,8 +32,9 @@ Under active development.
 
 2. Install tools to compile
     ```bash
-    sudo add-apt-repository ppa:ubuntu-toolchain-r-test
-    sudo apt-get install cmake libboost-all-dev
+    sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y && \
+    sudo apt-get update && \
+    sudo apt-get install cmake libboost-all-dev g++-7 -y
     ```
 
 3. Install the module
