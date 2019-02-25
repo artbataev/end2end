@@ -60,19 +60,18 @@ CTCDecoder::CTCDecoder(int blank_idx_, int beam_width_ = 100,
             space_id = -1;
     }
     if (!lm_path.empty()) {
-        auto enumerate_vocab = new CustomEnumerateVocab{};
+        auto enumerate_vocab = CustomEnumerateVocab{};
         lm::ngram::Config config;
-        config.enumerate_vocab = enumerate_vocab;
+        config.enumerate_vocab = &enumerate_vocab;
         lm_model = std::unique_ptr<lm::ngram::ProbingModel>(
                 dynamic_cast<lm::ngram::ProbingModel *>(
                         lm::ngram::LoadVirtual(lm_path.c_str(), config, lm::ngram::PROBING)));
         if (case_sensitive) {
-            word2index = enumerate_vocab->get_word2index();
+            word2index = enumerate_vocab.get_word2index();
         } else {
-            for (const auto& elem: enumerate_vocab->get_word2index())
+            for (const auto& elem: enumerate_vocab.get_word2index())
                 word2index[str_to_lower(elem.first)] = elem.second;
         }
-        delete enumerate_vocab;
     } else {
         lmwt = 0;
     }
