@@ -97,7 +97,7 @@ target_link_libraries(cpp_ctc_decoder
         PRIVATE inner_math_utils
         PRIVATE pybind11::module
         PRIVATE ${TORCH_LIBRARIES}
-        PRIVATE kenlm
+        PUBLIC kenlm
         )
 
 set_target_properties(cpp_ctc_decoder PROPERTIES
