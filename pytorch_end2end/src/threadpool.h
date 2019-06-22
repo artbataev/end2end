@@ -1,27 +1,29 @@
+// Copyright 2019 Vladimir Bataev
+
 #pragma once
 
-#include <thread>
+#include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <queue>
-#include <functional>
-#include <condition_variable>
+#include <thread>
 
 class ThreadPool {
-public:
-    explicit ThreadPool(size_t num_threads_);
+ public:
+  explicit ThreadPool(size_t num_threads_);
 
-    void add_task(std::function<void()>&& task);
+  void add_task(std::function<void()>&& task);
 
-    ~ThreadPool();
+  ~ThreadPool();
 
-private:
-    void task_runner();
+ private:
+  void task_runner();
 
-    bool working;
-    size_t num_threads;
+  bool working;
+  size_t num_threads;
 
-    std::vector<std::thread> pool;
-    std::queue<std::function<void()>> tasks;
-    std::mutex tasks_mutex;
-    std::condition_variable tasks_condition;
+  std::vector<std::thread> pool;
+  std::queue<std::function<void()>> tasks;
+  std::mutex tasks_mutex;
+  std::condition_variable tasks_condition;
 };
