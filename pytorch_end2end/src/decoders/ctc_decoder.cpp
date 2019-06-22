@@ -1,20 +1,19 @@
 // Copyright 2019 Vladimir Bataev
 
+#include "decoders/ctc_decoder.h"
+
+#include <algorithm>
 #include <functional>
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
 
-// pytorch
-#include <torch/extension.h>
+#include <torch/extension.h>  // pytorch
+#include "lm/model.hh"        // kenlm
 
-// kenlm
-#include "lm/model.hh"
-
-#include "ctc_decoder.h"
-#include "math_utils.h"
-#include "threadpool.h"
+#include "utils/math_utils.h"
+#include "utils/threadpool.h"
 
 const double LOG_E_10 = std::log(10.0);
 
@@ -113,9 +112,9 @@ double CTCDecoder::get_score_for_sentence(
     if (c_id == blank_id)  // first
       continue;
 
-    if (c_id != space_id)
+    if (c_id != space_id) {
       word += labels[c_id];
-    else if (!word.empty()) {
+    } else if (!word.empty()) {
       words.emplace_back(word);
       word = "";
     }
@@ -340,7 +339,7 @@ void CTCDecoder::Prefix::repr(
             << " | prob: " << std::exp(get_prev_full_prob()) << ", "
             << get_prev_full_prob();
   std::cout << " | lm_score: " << lm_score << "\n";
-};
+}
 
 std::tuple<std::vector<int>, int, std::string> CTCDecoder::decode_sentence(
     const at::TensorAccessor<double, 2>& logits_a, int sequence_len) {

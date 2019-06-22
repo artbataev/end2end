@@ -8,6 +8,8 @@
 #include <vector>
 #include <tuple>
 #include <map>
+#include <memory>
+#include <utility>
 
 #include "lm/model.hh"
 
@@ -96,7 +98,7 @@ class CTCDecoder {
 
 PYBIND11_MODULE(cpp_ctc_decoder, m) {
   namespace py = pybind11;
-  using namespace pybind11::literals;
+  using pybind11::literals::operator""_a;
   py::class_<CTCDecoder>(m, "CTCDecoder")
       .def(py::init<int, int, std::vector<std::string>, std::string, double,
                     double, double, bool>(),

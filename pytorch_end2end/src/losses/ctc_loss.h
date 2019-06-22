@@ -3,6 +3,7 @@
 #pragma once
 
 #include <torch/extension.h>
+#include <tuple>
 
 class CTCLossEngine {
  public:
@@ -24,7 +25,7 @@ class CTCLossEngine {
 
 PYBIND11_MODULE(cpp_ctc_loss, m) {
   namespace py = pybind11;
-  using namespace pybind11::literals;
+  using pybind11::literals::operator""_a;
   py::class_<CTCLossEngine>(m, "CTCLossEngine")
       .def(py::init<int>(), "blank_idx"_a)
       .def("compute", &CTCLossEngine::compute, "CTC loss forward and grads",

@@ -7,6 +7,7 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <vector>
 
 class ThreadPool {
  public:

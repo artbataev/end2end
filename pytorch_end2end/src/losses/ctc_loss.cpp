@@ -1,12 +1,12 @@
 // Copyright 2019 Vladimir Bataev
 
-#include "ctc_loss.h"
+#include "losses/ctc_loss.h"
 
-#include <algorithm>
 #include <torch/extension.h>
+#include <algorithm>
 
-#include "math_utils.h"
-#include "threadpool.h"
+#include "utils/math_utils.h"
+#include "utils/threadpool.h"
 
 CTCLossEngine::CTCLossEngine(int blank_idx_) : blank_idx{blank_idx_} {}
 
@@ -67,7 +67,7 @@ void CTCLossEngine::compute_2d(
   auto log_beta = torch::full_like(log_alpha, -INFINITY);
   auto log_beta_a = log_beta.accessor<scalar_t, 2>();
 
-  if (seq_len > 1 or ext_targets_len == 1)
+  if (seq_len > 1 || ext_targets_len == 1)
     log_beta_a[ext_targets_len - 1][seq_len - 1] = 0;
   if (ext_targets_len > 1) log_beta_a[ext_targets_len - 2][seq_len - 1] = 0;
   for (int t = seq_len - 2; t >= 0; t--) {  // time steps
