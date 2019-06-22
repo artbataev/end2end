@@ -158,181 +158,155 @@
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pytorch_end2end" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pytorch_end2end.CTCLoss">
-<em class="property">class </em><code class="descclassname">pytorch_end2end.</code><code class="descname">CTCLoss</code><span class="sig-paren">(</span><em>size_average=None</em>, <em>reduce=None</em>, <em>after_logsoftmax=False</em>, <em>time_major=False</em>, <em>blank_idx=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/modules/ctc_loss.html#CTCLoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCLoss" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">pytorch_end2end.</code><code class="sig-name descname">CTCLoss</code><span class="sig-paren">(</span><em class="sig-param">size_average=None</em>, <em class="sig-param">reduce=None</em>, <em class="sig-param">after_logsoftmax=False</em>, <em class="sig-param">time_major=False</em>, <em class="sig-param">blank_idx=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/modules/ctc_loss.html#CTCLoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCLoss" title="Permalink to this definition">¶</a></dt>
 <dd><p>Criterion to compute CTC Loss as described in <a class="reference external" href="http://www.cs.toronto.edu/~graves/icml_2006.pdf">http://www.cs.toronto.edu/~graves/icml_2006.pdf</a></p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>size_average</strong> – if compute average loss (only if reduce is True)</li>
-<li><strong>reduce</strong> – if compute mean or average loss (if None, returns full tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code>)</li>
-<li><strong>after_logsoftmax</strong> – <p>if logsoftmax is used before passing neural network outputs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>size_average</strong> – if compute average loss (only if reduce is True)</p></li>
+<li><p><strong>reduce</strong> – if compute mean or average loss (if None, returns full tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code>)</p></li>
+<li><p><strong>after_logsoftmax</strong> – <p>if logsoftmax is used before passing neural network outputs</p>
 <p>(else takes pure network outputs)</p>
-</li>
-<li><strong>time_major</strong> – if logits are time major (or batch major), default <code class="docutils literal notranslate"><span class="pre">True</span></code></li>
-<li><strong>blank_idx</strong> – id of blank label, default <code class="docutils literal notranslate"><span class="pre">0</span></code></li>
+</p></li>
+<li><p><strong>time_major</strong> – if logits are time major (or batch major), default <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
+<li><p><strong>blank_idx</strong> – id of blank label, default <code class="docutils literal notranslate"><span class="pre">0</span></code></p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 <dl class="method">
 <dt id="pytorch_end2end.CTCLoss.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>logits</em>, <em>targets</em>, <em>logits_lengths</em>, <em>targets_lengths</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/modules/ctc_loss.html#CTCLoss.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCLoss.forward" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">logits</em>, <em class="sig-param">targets</em>, <em class="sig-param">logits_lengths</em>, <em class="sig-param">targets_lengths</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/modules/ctc_loss.html#CTCLoss.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCLoss.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes CTC Loss</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>logits</strong> – Float or Double Tensor (network output)
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logits</strong> – Float or Double Tensor (network output)
 of shape <code class="docutils literal notranslate"><span class="pre">(sequence_length,</span> <span class="pre">batch_size,</span> <span class="pre">alphabet_size)</span></code> if <code class="docutils literal notranslate"><span class="pre">time_major</span></code> is True,
-else of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">sequence_length,</span> <span class="pre">alphabet_size)</span></code></li>
-<li><strong>targets</strong> – Tensor with targets of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">targets_sequence_length)</span></code></li>
-<li><strong>logits_lengths</strong> – Tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code> with lengths of sequences</li>
-<li><strong>targets_lengths</strong> – Tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code> with lengths of target sequences</li>
+else of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">sequence_length,</span> <span class="pre">alphabet_size)</span></code></p></li>
+<li><p><strong>targets</strong> – Tensor with targets of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">targets_sequence_length)</span></code></p></li>
+<li><p><strong>logits_lengths</strong> – Tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code> with lengths of sequences</p></li>
+<li><p><strong>targets_lengths</strong> – Tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code> with lengths of target sequences</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">tensor with CTC loss of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code> if <code class="docutils literal notranslate"><span class="pre">reduce</span> <span class="pre">is</span> <span class="pre">None</span></code> else of shape <code class="docutils literal notranslate"><span class="pre">(1,)</span></code></p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tensor with CTC loss of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code> if <code class="docutils literal notranslate"><span class="pre">reduce</span> <span class="pre">is</span> <span class="pre">None</span></code> else of shape <code class="docutils literal notranslate"><span class="pre">(1,)</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="pytorch_end2end.CTCDecoder">
-<em class="property">class </em><code class="descclassname">pytorch_end2end.</code><code class="descname">CTCDecoder</code><span class="sig-paren">(</span><em>beam_width=100</em>, <em>after_logsoftmax=False</em>, <em>blank_idx=0</em>, <em>time_major=False</em>, <em>labels=None</em>, <em>lm_path=None</em>, <em>lmwt=1.0</em>, <em>wip=1.0</em>, <em>oov_penalty=-10</em>, <em>case_sensitive=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">pytorch_end2end.</code><code class="sig-name descname">CTCDecoder</code><span class="sig-paren">(</span><em class="sig-param">beam_width=100</em>, <em class="sig-param">after_logsoftmax=False</em>, <em class="sig-param">blank_idx=0</em>, <em class="sig-param">time_major=False</em>, <em class="sig-param">labels=None</em>, <em class="sig-param">lm_path=None</em>, <em class="sig-param">lmwt=1.0</em>, <em class="sig-param">wip=1.0</em>, <em class="sig-param">oov_penalty=-10</em>, <em class="sig-param">case_sensitive=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decoder class to perform CTC decoding</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>beam_width</strong> – <p>width of beam (number of stored hypotheses), default <code class="docutils literal notranslate"><span class="pre">100</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>beam_width</strong> – <p>width of beam (number of stored hypotheses), default <code class="docutils literal notranslate"><span class="pre">100</span></code>.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">1</span></code>, decoder always perform greedy (argmax) decoding</p>
-</li>
-<li><strong>after_logsoftmax</strong> – <p>if log_logits (logits after log softmax), default <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</p></li>
+<li><p><strong>after_logsoftmax</strong> – <p>if log_logits (logits after log softmax), default <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 <p>(with False decoder expects pure logits, not after softmax).
 Greedy decoding ignores this parameter and can work with pure logits, or after log softmax</p>
-</li>
-<li><strong>blank_idx</strong> – id of blank label, default <code class="docutils literal notranslate"><span class="pre">0</span></code></li>
-<li><strong>time_major</strong> – if logits are time major (else batch major)</li>
-<li><strong>labels</strong> – list of strings with labels (including blank symbol), e.g. <code class="docutils literal notranslate"><span class="pre">[&quot;_&quot;,</span> <span class="pre">&quot;a&quot;,</span> <span class="pre">&quot;b&quot;,</span> <span class="pre">&quot;c&quot;]</span></code></li>
-<li><strong>lm_path</strong> – path to language model (ARPA format or gzipped ARPA)</li>
-<li><strong>lmwt</strong> – language model weight, default <code class="docutils literal notranslate"><span class="pre">1.0</span></code>, makes sense only if language model is present</li>
-<li><strong>wip</strong> – word insertion penalty, default <code class="docutils literal notranslate"><span class="pre">1.0</span></code>, makes sense only if labels are present</li>
-<li><strong>oov_penalty</strong> – penalty for each oov word, default <code class="docutils literal notranslate"><span class="pre">-10.0</span></code></li>
-<li><strong>case_sensitive</strong> – obtain language model scores with respect to case, default <code class="docutils literal notranslate"><span class="pre">False</span></code></li>
+</p></li>
+<li><p><strong>blank_idx</strong> – id of blank label, default <code class="docutils literal notranslate"><span class="pre">0</span></code></p></li>
+<li><p><strong>time_major</strong> – if logits are time major (else batch major)</p></li>
+<li><p><strong>labels</strong> – list of strings with labels (including blank symbol), e.g. <code class="docutils literal notranslate"><span class="pre">[&quot;_&quot;,</span> <span class="pre">&quot;a&quot;,</span> <span class="pre">&quot;b&quot;,</span> <span class="pre">&quot;c&quot;]</span></code></p></li>
+<li><p><strong>lm_path</strong> – path to language model (ARPA format or gzipped ARPA)</p></li>
+<li><p><strong>lmwt</strong> – language model weight, default <code class="docutils literal notranslate"><span class="pre">1.0</span></code>, makes sense only if language model is present</p></li>
+<li><p><strong>wip</strong> – word insertion penalty, default <code class="docutils literal notranslate"><span class="pre">1.0</span></code>, makes sense only if labels are present</p></li>
+<li><p><strong>oov_penalty</strong> – penalty for each oov word, default <code class="docutils literal notranslate"><span class="pre">-10.0</span></code></p></li>
+<li><p><strong>case_sensitive</strong> – obtain language model scores with respect to case, default <code class="docutils literal notranslate"><span class="pre">False</span></code></p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 <dl class="method">
 <dt id="pytorch_end2end.CTCDecoder.decode">
-<code class="descname">decode</code><span class="sig-paren">(</span><em>logits</em>, <em>logits_lengths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder.decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder.decode" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">decode</code><span class="sig-paren">(</span><em class="sig-param">logits</em>, <em class="sig-param">logits_lengths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder.decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder.decode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs prefix beam search decoding as described in <a class="reference external" href="https://arxiv.org/abs/1408.2873">https://arxiv.org/abs/1408.2873</a></p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>logits</strong> – <p>tensor with neural network outputs after logsoftmax</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logits</strong> – <p>tensor with neural network outputs after logsoftmax</p>
 <p>of shape <code class="docutils literal notranslate"><span class="pre">(sequence_length,</span> <span class="pre">batch_size,</span> <span class="pre">alphabet_size)</span></code> if <code class="docutils literal notranslate"><span class="pre">time_major</span></code></p>
 <p>else of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">sequence_length,</span> <span class="pre">alphabet_size)</span></code></p>
-</li>
-<li><strong>logits_lengths</strong> – default <code class="docutils literal notranslate"><span class="pre">None</span></code></li>
+</p></li>
+<li><p><strong>logits_lengths</strong> – default <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p><code class="docutils literal notranslate"><span class="pre">namedtuple(decoded_targets,</span> <span class="pre">decoded_targets_lengths,</span> <span class="pre">decoded_sentences)</span></code></p>
-<dl class="docutils">
-<dt>decoded_targets:</dt>
-<dd><p class="first last">tensor with result targets of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">sequence_length)</span></code>,
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p><code class="docutils literal notranslate"><span class="pre">namedtuple(decoded_targets,</span> <span class="pre">decoded_targets_lengths,</span> <span class="pre">decoded_sentences)</span></code></p>
+<dl class="simple">
+<dt>decoded_targets:</dt><dd><p>tensor with result targets of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">sequence_length)</span></code>,
 doesn’t contain blank symbols</p>
 </dd>
-<dt>decoded_targets_length:</dt>
-<dd><p class="first last">tensor with lengths of decoded targets</p>
+<dt>decoded_targets_length:</dt><dd><p>tensor with lengths of decoded targets</p>
 </dd>
-<dt>decoded_sentences:</dt>
-<dd><p class="first last">list of strings, shape <code class="docutils literal notranslate"><span class="pre">(batch_size)</span></code>.
+<dt>decoded_sentences:</dt><dd><p>list of strings, shape <code class="docutils literal notranslate"><span class="pre">(batch_size)</span></code>.
 If <code class="docutils literal notranslate"><span class="pre">labels</span> <span class="pre">are</span> <span class="pre">None</span></code>, list of empty string is returned.</p>
 </dd>
 </dl>
 </p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="pytorch_end2end.CTCDecoder.decode_greedy">
-<code class="descname">decode_greedy</code><span class="sig-paren">(</span><em>logits</em>, <em>logits_lengths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder.decode_greedy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder.decode_greedy" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">decode_greedy</code><span class="sig-paren">(</span><em class="sig-param">logits</em>, <em class="sig-param">logits_lengths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder.decode_greedy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder.decode_greedy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs greedy (argmax) decoding</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>logits</strong> – <p>tensor with neural network outputs after logsoftmax</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logits</strong> – <p>tensor with neural network outputs after logsoftmax</p>
 <p>of shape <code class="docutils literal notranslate"><span class="pre">(sequence_length,</span> <span class="pre">batch_size,</span> <span class="pre">alphabet_size)</span></code> if <code class="docutils literal notranslate"><span class="pre">time_major</span></code></p>
 <p>else of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">sequence_length,</span> <span class="pre">alphabet_size)</span></code></p>
-</li>
-<li><strong>logits_lengths</strong> – default <code class="docutils literal notranslate"><span class="pre">None</span></code></li>
+</p></li>
+<li><p><strong>logits_lengths</strong> – default <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p><code class="docutils literal notranslate"><span class="pre">(decoded_targets,</span> <span class="pre">decoded_targets_lengths,</span> <span class="pre">decoded_sentences)</span></code></p>
-<dl class="docutils">
-<dt>decoded_targets:</dt>
-<dd><p class="first last">tensor with result targets of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">sequence_length)</span></code>,
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p><code class="docutils literal notranslate"><span class="pre">(decoded_targets,</span> <span class="pre">decoded_targets_lengths,</span> <span class="pre">decoded_sentences)</span></code></p>
+<dl class="simple">
+<dt>decoded_targets:</dt><dd><p>tensor with result targets of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">sequence_length)</span></code>,
 doesn’t contain blank symbols</p>
 </dd>
-<dt>decoded_targets_length:</dt>
-<dd><p class="first last">tensor with lengths of decoded targets</p>
+<dt>decoded_targets_length:</dt><dd><p>tensor with lengths of decoded targets</p>
 </dd>
-<dt>decoded_sentences:</dt>
-<dd><p class="first last">list of strings, shape <code class="docutils literal notranslate"><span class="pre">(batch_size)</span></code>.
+<dt>decoded_sentences:</dt><dd><p>list of strings, shape <code class="docutils literal notranslate"><span class="pre">(batch_size)</span></code>.
 If <code class="docutils literal notranslate"><span class="pre">labels</span> <span class="pre">are</span> <span class="pre">None</span></code>, list of empty string is returned.</p>
 </dd>
 </dl>
 </p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="pytorch_end2end.CTCEncoder">
-<em class="property">class </em><code class="descclassname">pytorch_end2end.</code><code class="descname">CTCEncoder</code><span class="sig-paren">(</span><em>characters</em>, <em>blank_id=0</em>, <em>transform_fn=&lt;method 'upper' of 'str' objects&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">pytorch_end2end.</code><code class="sig-name descname">CTCEncoder</code><span class="sig-paren">(</span><em class="sig-param">characters</em>, <em class="sig-param">blank_id=0</em>, <em class="sig-param">transform_fn=&lt;method 'upper' of 'str' objects&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simple CTC-encoder for text</p>
 <dl class="method">
 <dt id="pytorch_end2end.CTCEncoder.clean">
-<code class="descname">clean</code><span class="sig-paren">(</span><em>text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.clean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.clean" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">clean</code><span class="sig-paren">(</span><em class="sig-param">text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.clean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.clean" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="pytorch_end2end.CTCEncoder.decode">
-<code class="descname">decode</code><span class="sig-paren">(</span><em>ids_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.decode" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">decode</code><span class="sig-paren">(</span><em class="sig-param">ids_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.decode" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="pytorch_end2end.CTCEncoder.decode_pure">
-<code class="descname">decode_pure</code><span class="sig-paren">(</span><em>ids_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.decode_pure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.decode_pure" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">decode_pure</code><span class="sig-paren">(</span><em class="sig-param">ids_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.decode_pure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.decode_pure" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="pytorch_end2end.CTCEncoder.encode">
-<code class="descname">encode</code><span class="sig-paren">(</span><em>text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.encode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.encode" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">encode</code><span class="sig-paren">(</span><em class="sig-param">text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.encode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.encode" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
