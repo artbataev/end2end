@@ -31,6 +31,7 @@ class CMakeBuild(build_ext):
             sys.exit(-1)
 
         self.pytorch_dir = os.path.dirname(torch.__file__)
+        self.python_exe = subprocess.check_output(["which", "python"]).decode().strip()
 
         for ext in self.extensions:
             self.build_cmake(ext)
@@ -39,6 +40,7 @@ class CMakeBuild(build_ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = ["-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(extdir),
                       "-DCMAKE_PREFIX_PATH={}".format(self.pytorch_dir),
+                      "-DPYTHON_EXECUTABLE:FILEPATH={}".format(self.python_exe),
                       "-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=0",  # for kenlm - avoid seg fault
                       # "-DPYTHON_EXECUTABLE=".format(sys.executable),
                       ]
