@@ -103,8 +103,9 @@ def _gram_ctc_loss(logits, targets, grams, blank_idx=0):
             if j < extended_targets_len - 1:
                 log_beta[j, t] = log_sum_exp(log_beta[j, t],
                                              log_beta[j + 1, t + 1] + logits[t + 1, extended_targets[j + 1]])
-                if current_label != blank_idx and j + 2 < extended_targets_len and extended_targets[
-                    j + 2] != current_label:
+                if (current_label != blank_idx
+                        and j + 2 < extended_targets_len
+                        and extended_targets[j + 2] != current_label):
                     log_beta[j, t] = log_sum_exp(log_beta[j, t], log_beta[j + 2, t + 1] + logits[
                         t + 1, extended_targets[j + 2]])
 
@@ -146,7 +147,8 @@ def _gram_ctc_3d_loss(logits, targets, logits_lengths, targets_length, grams, bl
 
     # iterative computation
     # for i in range(batch_size):
-    #     loss, grad = _ctc_loss(inputs[:input_sizes[i], i, :], targets_flat[targets_sizes_start[i]:targets_sizes_end[i]])
+    #     loss, grad = _ctc_loss(inputs[:input_sizes[i], i, :],
+    #     targets_flat[targets_sizes_start[i]:targets_sizes_end[i]])
     #     grads[:input_sizes[i], i, :] = grad
     #     losses[i] = loss
 

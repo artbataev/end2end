@@ -7,11 +7,12 @@ test with
 """
 import unittest
 
+import numpy as np
 import torch
 import torch.nn.functional as F
-from pytorch_end2end import CTCLoss
 from torch.autograd.gradcheck import gradcheck
-import numpy as np
+
+from pytorch_end2end import CTCLoss
 
 
 class TestCTCLoss(unittest.TestCase):
@@ -122,7 +123,6 @@ class TestCTCLoss(unittest.TestCase):
         self.assertAlmostEqual(cpu_cost, gpu_cost, self.places)
         self.assertAlmostEqual(cpu_cost, expected_cost, self.places)
 
-    # # TODO: add tests from https://github.com/tensorflow/tensorflow/blob/4ac1956698e0e02f3051da65cdf453601555ed4a/tensorflow/python/kernel_tests/ctc_loss_op_test.py
     # @unittest.skip("")
     def test_tf_1(self):
         # blank in tensorflow - last! here - first!

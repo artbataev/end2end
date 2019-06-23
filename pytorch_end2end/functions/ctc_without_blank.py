@@ -119,7 +119,7 @@ class CTCWithoutBlankLossFunction(Function):
     def forward(ctx, logits, targets, logits_lengths, targets_lengths, space_idx=-1):
         # logits: expected shape of batch_size * sequence_length * num_labels, after logsoftmax!
         loss, grads = _ctc_without_blank_3d_loss(logits.cpu().numpy(), targets.cpu().numpy(),
-                                   logits_lengths.cpu().numpy(), targets_lengths.cpu().numpy(), space_idx)
+                                                 logits_lengths.cpu().numpy(), targets_lengths.cpu().numpy(), space_idx)
         ctx.grads = torch.FloatTensor(grads)  # save for backward not works!
         if logits.is_cuda:
             return torch.FloatTensor(loss).cuda(logits.get_device())
@@ -136,7 +136,6 @@ class CTCWithoutBlankLossFunction(Function):
             loss_grads = loss_grads.cuda(grad_output.get_device())
         grad = loss_grads.contiguous() * grad_output.contiguous().view(-1, 1, 1)
         return grad, None, None, None, None
-
 
 
 if __name__ == "__main__":

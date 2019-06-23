@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
@@ -31,10 +30,11 @@ class AlignedTargetsLoss(nn.Module):
 
         if self._reduce:
             loss = F.nll_loss(logits_logsoftmax.view(batch_size * sequence_length, -1),
-                          Variable(targets_new).view(batch_size * sequence_length), reduce=True)
+                              Variable(targets_new).view(batch_size * sequence_length), reduce=True)
         else:
             loss = F.nll_loss(logits_logsoftmax.view(batch_size * sequence_length, -1),
-                          Variable(targets_new).view(batch_size * sequence_length), reduce=False).view(batch_size, sequence_length)
+                              Variable(targets_new).view(batch_size * sequence_length),
+                              reduce=False).view(batch_size, sequence_length)
             if self._reduce_by_sequence:
                 if not logits_lengths.is_cuda:
                     logits_lengths = logits_lengths.cuda(cur_device)

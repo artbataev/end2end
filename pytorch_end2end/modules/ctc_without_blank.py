@@ -1,6 +1,8 @@
-from ..functions.ctc_without_blank import CTCWithoutBlankLossFunction
 import torch
 import torch.nn as nn
+
+from ..functions.ctc_without_blank import CTCWithoutBlankLossFunction
+
 
 class CTCWithoutBlankLoss(nn.Module):
     def __init__(self, reduce=True, after_softmax=False, space_idx=-1):
@@ -15,7 +17,8 @@ class CTCWithoutBlankLoss(nn.Module):
         else:
             logits_logsoftmax = nn.LogSoftmax(dim=2)(logits)
 
-        loss = CTCWithoutBlankLossFunction().apply(logits_logsoftmax, targets, logits_lengths, targets_lengths, self._space_idx)
+        loss = CTCWithoutBlankLossFunction().apply(
+            logits_logsoftmax, targets, logits_lengths, targets_lengths, self._space_idx)
         if self._reduce:
             return loss.sum()
         else:

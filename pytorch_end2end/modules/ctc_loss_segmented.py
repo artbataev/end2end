@@ -45,7 +45,7 @@ class CTCLossSegmented(nn.Module):
         for i in range(batch_size):
             start_space = -1
             all_word_well_recognized = True
-            current_word_length=0
+            current_word_length = 0
             last_word_char = -1
             last_word_char_is_blank = False
             for t in range(logits_lengths.data[i]):
@@ -73,7 +73,7 @@ class CTCLossSegmented(nn.Module):
                     last_word_char_is_blank = False
                 elif targets_aligned[i, t] == self.blank_idx:
                     last_word_char_is_blank = True
-                else: # not blank
+                else:  # not blank
                     if last_word_char_is_blank or targets_aligned[i, t] != last_word_char:
                         current_word_length += 1
                     last_word_char = targets_aligned[i, t]
@@ -122,17 +122,17 @@ class CTCLossSegmented(nn.Module):
                     if next < start:
                         continue
                     batch_ids_new.append(i)
-                    logits_new[new_i, :(next-start + 1)] = logits[i, start:next+1]
+                    logits_new[new_i, :(next - start + 1)] = logits[i, start:next + 1]
                     current_targets = Variable(torch.LongTensor(
-                        [c for c, _ in itertools.groupby(targets_aligned[i, start:next+1].tolist()) if
+                        [c for c, _ in itertools.groupby(targets_aligned[i, start:next + 1].tolist()) if
                          c != self.blank_idx]))
                     targets_new[new_i, :current_targets.size()[0]] = current_targets
                     logits_lengths_new.append(next - start + 1)
                     targets_lengths_new.append(current_targets.size()[0])
                     new_i += 1
 
-        assert num_segments == len(batch_ids_new), "expected {}, get {} segments: {}".format(num_segments, len(batch_ids_new),
-                                                                                             indices_to_segment)
+        assert num_segments == len(batch_ids_new), "expected {}, get {} segments: {}".format(
+            num_segments, len(batch_ids_new), indices_to_segment)
         logits_lengths_new = Variable(torch.LongTensor(logits_lengths_new), requires_grad=False)
         targets_lengths_new = Variable(torch.LongTensor(targets_lengths_new), requires_grad=False)
 

@@ -88,8 +88,10 @@ def _get_alignment_ctc_1d(logits, targets):
                 if alpha[i - 1, k - 1] > alpha[i, k]:
                     alpha[i, k] = alpha[i - 1, k - 1]
                     path_alpha[i, k] = i - 1
-                if current_label != blank and i - 2 > 0 and extended_targets[i - 2] != current_label and alpha[
-                    i - 2, k - 1] > alpha[i, k]:
+                if (current_label != blank
+                        and i - 2 > 0
+                        and extended_targets[i - 2] != current_label
+                        and alpha[i - 2, k - 1] > alpha[i, k]):
                     alpha[i, k] = alpha[i - 2, k - 1]
                     path_alpha[i, k] = i - 2
             alpha[i, k] += logits[k, current_label]  # log-scale, +
