@@ -1,8 +1,10 @@
-import numba
-import numpy as np
-from ..utils import log_sum_exp
 import queue
 import threading
+
+import numba
+import numpy as np
+
+from ..utils import log_sum_exp
 
 
 @numba.jit(nogil=True)
@@ -63,8 +65,9 @@ def _ctc_loss_np(logits, targets, blank_idx=0):
             if j < extended_targets_len - 1:
                 log_beta[j, t] = log_sum_exp(log_beta[j, t],
                                              log_beta[j + 1, t + 1] + logits[t + 1, extended_targets[j + 1]])
-                if current_label != blank_idx and j + 2 < extended_targets_len and extended_targets[
-                    j + 2] != current_label:
+                if (current_label != blank_idx
+                        and j + 2 < extended_targets_len
+                        and extended_targets[j + 2] != current_label):
                     log_beta[j, t] = log_sum_exp(log_beta[j, t], log_beta[j + 2, t + 1] + logits[
                         t + 1, extended_targets[j + 2]])
 

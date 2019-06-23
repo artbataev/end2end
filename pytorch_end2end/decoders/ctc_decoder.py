@@ -10,7 +10,7 @@ if "DEBUG_E2E" in os.environ:
     build_path = os.path.join(module_base, os.getenv("DEBUG_E2E"))
     sys.path.append(build_path)
 
-import cpp_ctc_decoder
+import cpp_ctc_decoder  # noqa: E402
 
 
 class CTCDecoderError(Exception):
