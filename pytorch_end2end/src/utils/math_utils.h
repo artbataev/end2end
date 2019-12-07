@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <torch/extension.h>
+#include <cmath>
+#include <limits>
 
 template <typename scalar_t>
 scalar_t log_sum_exp(const scalar_t log_prob_1, const scalar_t log_prob_2) {

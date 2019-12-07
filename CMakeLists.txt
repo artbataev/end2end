@@ -54,46 +54,4 @@ add_library(kenlm ${KENLM_LM_SOURCE} ${KENLM_LM_COMMON_SOURCE})
 target_compile_definitions(kenlm PUBLIC -DKENLM_MAX_ORDER=${KENLM_MAX_ORDER})
 target_link_libraries(kenlm kenlm_util ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
-include_directories(pytorch_end2end/src)
-
-# inner libraries
-add_library(threadpool
-    pytorch_end2end/src/utils/threadpool.cpp
-    pytorch_end2end/src/utils/threadpool.h)
-target_link_libraries(threadpool
-    ${CMAKE_THREAD_LIBS_INIT})
-
-add_library(inner_math_utils
-    pytorch_end2end/src/utils/math_utils.cpp
-    pytorch_end2end/src/utils/math_utils.h)
-target_link_libraries(inner_math_utils
-    PRIVATE pybind11::module
-    PRIVATE ${TORCH_LIBRARIES})
-
-
-# CTC loss
-pybind11_add_module(cpp_ctc_loss MODULE
-    pytorch_end2end/src/losses/ctc_loss.cpp
-    pytorch_end2end/src/losses/ctc_loss.h)
-
-target_link_libraries(cpp_ctc_loss
-    PRIVATE threadpool
-    PRIVATE inner_math_utils
-    PRIVATE ${TORCH_LIBRARIES}
-    )
-
-# Gram-CTC loss
-# ...
-
-
-# Decoder
-pybind11_add_module(cpp_ctc_decoder MODULE
-    pytorch_end2end/src/decoders/ctc_decoder.cpp
-    pytorch_end2end/src/decoders/ctc_decoder.h)
-
-target_link_libraries(cpp_ctc_decoder
-    PRIVATE threadpool
-    PRIVATE inner_math_utils
-    PRIVATE ${TORCH_LIBRARIES}
-    PUBLIC kenlm
-    )
+add_subdirectory(pytorch_end2end/src)
