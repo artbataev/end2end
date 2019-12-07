@@ -1,4 +1,4 @@
-numba>=0.40
+numba>=0.46
 numpy>=1.15
 ninja>=1.8.2
 tqdm
