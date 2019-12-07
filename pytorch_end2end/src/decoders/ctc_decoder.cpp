@@ -2,16 +2,14 @@
 
 #include "decoders/ctc_decoder.h"
 
+#include <torch/extension.h>  // pytorch
+
 #include <algorithm>
 #include <functional>
 #include <iostream>
-#include <map>
-#include <string>
 #include <vector>
 
-#include <torch/extension.h>  // pytorch
-#include "lm/model.hh"        // kenlm
-
+#include "lm/model.hh"  // kenlm
 #include "utils/math_utils.h"
 #include "utils/threadpool.h"
 
@@ -37,10 +35,13 @@ std::string str_to_lower(const std::string& str) {
   return result;
 }
 
-CTCDecoder::CTCDecoder(int blank_idx_, int beam_width_ = 100,
+CTCDecoder::CTCDecoder(int blank_idx_,
+                       int beam_width_ = 100,
                        std::vector<std::string> labels_ = {},
-                       const std::string& lm_path = "", double lmwt_ = 1.0,
-                       double wip_ = 0.0, double oov_penalty_ = -1000.0,
+                       const std::string& lm_path = "",
+                       double lmwt_ = 1.0,
+                       double wip_ = 0.0,
+                       double oov_penalty_ = -1000.0,
                        bool case_sensitive_ = false)
     : blank_id(blank_idx_),
       beam_width{beam_width_},
@@ -171,10 +172,16 @@ std::tuple<at::Tensor, at::Tensor, std::vector<std::string>> CTCDecoder::decode(
   {
     ThreadPool pool{static_cast<size_t>(batch_size)};
     for (int i = 0; i < batch_size; i++) {
-      pool.add_task([this, &logits_a, &logits_lengths_a, i, &decoded_sentences,
-                     &decoded_indices_vec, &decoded_targets_lengths_a] {
+      pool.add_task([this,
+                     &logits_a,
+                     &logits_lengths_a,
+                     i,
+                     &decoded_sentences,
+                     &decoded_indices_vec,
+                     &decoded_targets_lengths_a] {
         int current_sequence_len = 0;
-        std::tie(decoded_indices_vec[i], current_sequence_len,
+        std::tie(decoded_indices_vec[i],
+                 current_sequence_len,
                  decoded_sentences[i]) =
             decode_sentence(logits_a[i], logits_lengths_a[i]);
         decoded_targets_lengths_a[i] = current_sequence_len;
@@ -265,7 +272,8 @@ CTCDecoder::get_next_prefix(std::shared_ptr<CTCDecoder::Prefix>& prefix,
 
       new_prefix->lm_score +=
           new_prefix->lm_score_before_last +
-          lm_model->BaseScore(&new_prefix->lm_state_before_last, word_idx,
+          lm_model->BaseScore(&new_prefix->lm_state_before_last,
+                              word_idx,
                               &new_prefix->lm_state) /
               LOG_E_10;
 
@@ -280,7 +288,8 @@ CTCDecoder::get_next_prefix(std::shared_ptr<CTCDecoder::Prefix>& prefix,
 
       new_prefix->lm_score +=
           new_prefix->lm_score_before_last +
-          lm_model->BaseScore(&new_prefix->lm_state_before_last, word_idx,
+          lm_model->BaseScore(&new_prefix->lm_state_before_last,
+                              word_idx,
                               &new_prefix->lm_state) /
               LOG_E_10;
       new_prefix->num_oov_words_before_last = prefix->num_oov_words_before_last;
@@ -395,7 +404,8 @@ std::tuple<std::vector<int>, int, std::string> CTCDecoder::decode_sentence(
 
     if (prefixes.size() > beam_width) {
       std::nth_element(prefixes.begin(),
-                       std::next(prefixes.begin(), beam_width), prefixes.end(),
+                       std::next(prefixes.begin(), beam_width),
+                       prefixes.end(),
                        [this](const std::shared_ptr<Prefix>& lhs,
                               const std::shared_ptr<Prefix>& rhs) {
                          return get_prev_full_prob_with_lmwt(lhs.get()) >
@@ -405,7 +415,8 @@ std::tuple<std::vector<int>, int, std::string> CTCDecoder::decode_sentence(
     }
   }  // end for: timestep
 
-  std::sort(prefixes.begin(), prefixes.end(),
+  std::sort(prefixes.begin(),
+            prefixes.end(),
             [this](const std::shared_ptr<Prefix>& lhs,
                    const std::shared_ptr<Prefix>& rhs) {
               return get_prev_full_prob_with_lmwt(lhs.get()) >
@@ -424,7 +435,8 @@ std::tuple<std::vector<int>, int, std::string> CTCDecoder::decode_sentence(
   std::vector<int> result_sequence{prefixes[0]->get_sentence()};
   std::string result_sequence_str = indices2str(result_sequence);
 
-  return {result_sequence, static_cast<int>(result_sequence.size()),
+  return {result_sequence,
+          static_cast<int>(result_sequence.size()),
           result_sequence_str};
 }
 
@@ -452,8 +464,12 @@ CTCDecoder::decode_greedy(const at::Tensor& logits_,
   {
     ThreadPool pool{static_cast<size_t>(batch_size)};
     for (int i = 0; i < batch_size; i++) {
-      pool.add_task([this, &argmax_logits_a, &logits_lengths_a, i,
-                     &decoded_targets_a, &decoded_targets_lengths_a,
+      pool.add_task([this,
+                     &argmax_logits_a,
+                     &logits_lengths_a,
+                     i,
+                     &decoded_targets_a,
+                     &decoded_targets_lengths_a,
                      &decoded_sentences] {
         auto prev_symbol = blank_id;
         auto current_len = 0;

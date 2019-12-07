@@ -13,8 +13,11 @@ CTCLossEngine::CTCLossEngine(int blank_idx_) : blank_idx{blank_idx_} {}
 
 void CTCLossEngine::compute_2d(
     const torch::Tensor& logits_2d,
-    const torch::TensorAccessor<int64_t, 1>& targets_1d_a, int seq_len,
-    int targets_len, int batch_i, torch::Tensor& losses,
+    const torch::TensorAccessor<int64_t, 1>& targets_1d_a,
+    int seq_len,
+    int targets_len,
+    int batch_i,
+    torch::Tensor& losses,
     torch::Tensor& grads) {
   const auto logits_2d_a = logits_2d.accessor<double, 2>();
   using scalar_t = double;
@@ -28,7 +31,8 @@ void CTCLossEngine::compute_2d(
     extended_targets_a[i * 2 + 1] = targets_1d_a[i];
 
   // forward - alpha
-  auto log_alpha = torch::full({ext_targets_len, seq_len}, kMinusInfinity,
+  auto log_alpha = torch::full({ext_targets_len, seq_len},
+                               kMinusInfinity,
                                torch::TensorOptions().dtype(torch::kDouble));
   auto log_alpha_a = log_alpha.accessor<scalar_t, 2>();
 
@@ -99,7 +103,8 @@ void CTCLossEngine::compute_2d(
   auto alpha_beta = log_alpha + log_beta;
   auto alpha_beta_a = alpha_beta.accessor<scalar_t, 2>();
   auto prob_sum = torch::full(
-      {logits_2d_a.size(0), logits_2d_a.size(1)}, kMinusInfinity,
+      {logits_2d_a.size(0), logits_2d_a.size(1)},
+      kMinusInfinity,
       torch::TensorOptions().dtype(torch::kDouble));  // seq_len, alphabet_size
   auto prob_sum_a = prob_sum.accessor<scalar_t, 2>();
   for (int i = 0; i < ext_targets_len; i++) {

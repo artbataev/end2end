@@ -3,13 +3,14 @@
 #pragma once
 
 #include <torch/extension.h>
-#include <string>
-#include <unordered_map>
-#include <vector>
-#include <tuple>
+
 #include <map>
 #include <memory>
+#include <string>
+#include <tuple>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 #include "lm/model.hh"
 
@@ -18,9 +19,14 @@ using lm_state_t = lm::ngram::State;
 
 class CTCDecoder {
  public:
-  CTCDecoder(int blank_idx_, int beam_width_, std::vector<std::string> labels_,
-             const std::string& lm_path, double lmwt_, double wip_,
-             double oov_penalty_, bool case_sensitive_);
+  CTCDecoder(int blank_idx_,
+             int beam_width_,
+             std::vector<std::string> labels_,
+             const std::string& lm_path,
+             double lmwt_,
+             double wip_,
+             double oov_penalty_,
+             bool case_sensitive_);
 
   lm::WordIndex get_idx(const std::string& word) const;
   lm::WordIndex get_idx(const std::vector<int>& word_int) const;
