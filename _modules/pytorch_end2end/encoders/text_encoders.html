@@ -159,7 +159,7 @@
 <span class="sd">    Simple CTC-encoder for text</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">characters</span><span class="p">,</span> <span class="n">blank_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">transform_fn</span><span class="o">=</span><span class="nb">str</span><span class="o">.</span><span class="n">upper</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">characters</span><span class="p">,</span> <span class="n">blank_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">transform_fn</span><span class="o">=</span><span class="nb">str</span><span class="o">.</span><span class="n">upper</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">blank_id</span> <span class="o">=</span> <span class="n">blank_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transform_fn</span> <span class="o">=</span> <span class="n">transform_fn</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">char2id</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -196,7 +196,7 @@
 <span class="sd">    Encoder for Auto Segmentation Criterion (and CTC without blank)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allowed_chars</span><span class="o">=</span><span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">string</span><span class="o">.</span><span class="n">ascii_lowercase</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="n">to_lower</span><span class="o">=</span><span class="nb">str</span><span class="o">.</span><span class="n">casefold</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allowed_chars</span><span class="o">=</span><span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">string</span><span class="o">.</span><span class="n">ascii_lowercase</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="n">to_lower</span><span class="o">=</span><span class="nb">str</span><span class="o">.</span><span class="n">casefold</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </pre></div>
 

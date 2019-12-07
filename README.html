@@ -168,7 +168,7 @@
             
   <div class="section" id="losses-and-decoders-for-end-to-end-speech-recognition-and-optical-character-recognition-with-pytorch">
 <h1>Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with PyTorch<a class="headerlink" href="#losses-and-decoders-for-end-to-end-speech-recognition-and-optical-character-recognition-with-pytorch" title="Permalink to this headline">¶</a></h1>
-<p><a class="reference external" href="https://travis-ci.com/artbataev/end2end"> <img alt="https://travis-ci.com/artbataev/end2end.svg?branch=master" src="https://travis-ci.com/artbataev/end2end.svg?branch=master" />Build </a></p>
+<p><a class="reference external" href="https://travis-ci.com/artbataev/end2end"> <img alt="Build" src="https://travis-ci.com/artbataev/end2end.svg?branch=master" /> </a></p>
 <p>The module focuses on experiments with CTC-loss (Connectionist Temporal Classification) and its modifications.</p>
 <p>Under active development.</p>
 <div class="section" id="documentation">
@@ -233,8 +233,8 @@ python -m tests.test_ctc_decoder
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">pytorch_end2end</span> <span class="kn">import</span> <span class="n">CTCLoss</span>
 
-<span class="n">ctc_loss</span> <span class="o">=</span> <span class="n">CTCLoss</span><span class="p">(</span><span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> 
-    <span class="nb">reduce</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">size_average</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">after_logsoftmax</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">ctc_loss</span> <span class="o">=</span> <span class="n">CTCLoss</span><span class="p">(</span><span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+    <span class="n">reduce</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">size_average</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">after_logsoftmax</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">4</span>
 <span class="n">alphabet_size</span> <span class="o">=</span> <span class="mi">28</span> <span class="c1"># blank + 26 english characters + space</span>
@@ -257,7 +257,7 @@ python -m tests.test_ctc_decoder
 <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">4</span>
 <span class="n">alphabet_size</span> <span class="o">=</span> <span class="mi">6</span>
 <span class="n">decoder</span> <span class="o">=</span> <span class="n">CTCDecoder</span><span class="p">(</span><span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">beam_width</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> 
-                     <span class="n">time_major</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">after_logsoftmax</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                     <span class="n">time_major</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">after_logsoftmax</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                      <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">])</span>
 
 <span class="n">logits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">alphabet_size</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
@@ -265,7 +265,7 @@ python -m tests.test_ctc_decoder
 
 <span class="n">decoded_targets</span><span class="p">,</span> <span class="n">decoded_targets_lengths</span><span class="p">,</span> <span class="n">decoded_sentences</span> <span class="o">=</span> <span class="n">decoder</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">sentence</span> <span class="ow">in</span> <span class="n">decoded_sentences</span><span class="p">:</span>
-    <span class="k">print</span><span class="p">(</span><span class="n">sentence</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">sentence</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
