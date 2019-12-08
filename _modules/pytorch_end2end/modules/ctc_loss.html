@@ -158,35 +158,22 @@
 <span class="k">if</span> <span class="s2">&quot;DEBUG_E2E&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
     <span class="n">module_base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span>
     <span class="n">build_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_base</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DEBUG_E2E&quot;</span><span class="p">))</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">build_path</span><span class="p">)</span>
-
-<span class="n">cpp_ctc_loss</span> <span class="o">=</span> <span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;cpp_ctc_loss&quot;</span><span class="p">)</span>  <span class="c1"># to avoid E402: module level import not at top</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">build_path</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="CTCLoss"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCLoss">[docs]</a><span class="k">class</span> <span class="nc">CTCLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Criterion to compute CTC Loss as described in `&lt;http://www.cs.toronto.edu/~graves/icml_2006.pdf&gt;`_</span>
-
-<span class="sd">    :param size_average: if compute average loss (only if reduce is True)</span>
-<span class="sd">    :param reduce: if compute mean or average loss (if None, returns full tensor of shape ``(batch_size,)``)</span>
-<span class="sd">    :param after_logsoftmax: if logsoftmax is used before passing neural network outputs \n</span>
-<span class="sd">        (else takes pure network outputs)</span>
-<span class="sd">    :param time_major: if logits are time major (or batch major), default ``True``</span>
-<span class="sd">    :param blank_idx: id of blank label, default ``0``</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
+<span class="k">class</span> <span class="nc">ForwardBackwardLossBase</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size_average</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">after_logsoftmax</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">CTCLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span> <span class="o">=</span> <span class="n">blank_idx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reduce</span> <span class="o">=</span> <span class="n">reduce</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_size_average</span> <span class="o">=</span> <span class="n">size_average</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_after_logsoftmax</span> <span class="o">=</span> <span class="n">after_logsoftmax</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_time_major</span> <span class="o">=</span> <span class="n">time_major</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span> <span class="o">=</span> <span class="n">cpp_ctc_loss</span><span class="o">.</span><span class="n">CTCLossEngine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="CTCLoss.forward"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCLoss.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="p">,</span> <span class="n">targets_lengths</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">logits_lengths</span><span class="p">,</span> <span class="n">targets_lengths</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes CTC Loss</span>
+<span class="sd">        Computes Loss</span>
 
 <span class="sd">        :param logits: Float or Double Tensor (network output)</span>
 <span class="sd">            of shape ``(sequence_length, batch_size, alphabet_size)`` if ``time_major`` is True,</span>
@@ -216,7 +203,56 @@
                 <span class="k">return</span> <span class="n">loss</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">loss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">loss</span></div></div>
+        <span class="k">return</span> <span class="n">loss</span>
+
+
+<div class="viewcode-block" id="CTCLoss"><a class="viewcode-back" href="../../../pytorch_end2end.html#pytorch_end2end.CTCLoss">[docs]</a><span class="k">class</span> <span class="nc">CTCLoss</span><span class="p">(</span><span class="n">ForwardBackwardLossBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Criterion to compute CTC Loss as described in `&lt;http://www.cs.toronto.edu/~graves/icml_2006.pdf&gt;`_</span>
+
+<span class="sd">    :param size_average: if compute average loss (only if reduce is True)</span>
+<span class="sd">    :param reduce: if compute mean or average loss (if None, returns full tensor of shape ``(batch_size,)``)</span>
+<span class="sd">    :param after_logsoftmax: if logsoftmax is used before passing neural network outputs \n</span>
+<span class="sd">        (else takes pure network outputs)</span>
+<span class="sd">    :param time_major: if logits are time major (or batch major), default ``True``</span>
+<span class="sd">    :param blank_idx: id of blank label, default ``0``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size_average</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">after_logsoftmax</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">blank_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">size_average</span><span class="p">,</span> <span class="n">reduce</span><span class="p">,</span> <span class="n">after_logsoftmax</span><span class="p">,</span> <span class="n">time_major</span><span class="p">,</span> <span class="n">blank_idx</span><span class="p">)</span>
+        <span class="n">cpp_ctc_loss</span> <span class="o">=</span> <span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;cpp_ctc_loss&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span> <span class="o">=</span> <span class="n">cpp_ctc_loss</span><span class="o">.</span><span class="n">CTCLossEngine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span><span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">GramCTCLoss</span><span class="p">(</span><span class="n">CTCLoss</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">   Criterion to compute Gram-CTC Loss as described in `&lt;https://arxiv.org/abs/1703.00096&gt;`_</span>
+
+<span class="sd">   :param blank_idx: id of blank label, only ``0`` supported</span>
+<span class="sd">   :param num_base_labels:</span>
+<span class="sd">   :param total_labels:</span>
+<span class="sd">   :param labels2ids: dict for mapping label_id -&gt; base labels ids</span>
+<span class="sd">   :param size_average: if compute average loss (only if reduce is True)</span>
+<span class="sd">   :param reduce: if compute mean or average loss (if None, returns full tensor of shape ``(batch_size,)``)</span>
+<span class="sd">   :param after_logsoftmax: if logsoftmax is used before passing neural network outputs \n</span>
+<span class="sd">       (else takes pure network outputs)</span>
+<span class="sd">   :param time_major: if logits are time major (or batch major), default ``True``</span>
+<span class="sd">   &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blank_idx</span><span class="p">,</span> <span class="n">num_base_labels</span><span class="p">,</span> <span class="n">total_labels</span><span class="p">,</span> <span class="n">label2ids</span><span class="p">,</span>
+                 <span class="n">size_average</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">after_logsoftmax</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">time_major</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">size_average</span><span class="p">,</span> <span class="n">reduce</span><span class="p">,</span> <span class="n">after_logsoftmax</span><span class="p">,</span> <span class="n">time_major</span><span class="p">,</span> <span class="n">blank_idx</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_base_labels</span> <span class="o">=</span> <span class="n">num_base_labels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_total_labels</span> <span class="o">=</span> <span class="n">total_labels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_label2ids</span> <span class="o">=</span> <span class="n">label2ids</span>
+        <span class="n">cpp_gram_ctc_loss</span> <span class="o">=</span> <span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;cpp_gram_ctc_loss&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span> <span class="o">=</span> <span class="n">cpp_gram_ctc_loss</span><span class="o">.</span><span class="n">GramCTCLossEngine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_blank_idx</span><span class="p">,</span>
+                                                           <span class="bp">self</span><span class="o">.</span><span class="n">_num_base_labels</span><span class="p">,</span>
+                                                           <span class="bp">self</span><span class="o">.</span><span class="n">_total_labels</span><span class="p">,</span>
+                                                           <span class="bp">self</span><span class="o">.</span><span class="n">_label2ids</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </pre></div>
 
            </div>

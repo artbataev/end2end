@@ -173,27 +173,6 @@
 </ul>
 </dd>
 </dl>
-<dl class="method">
-<dt id="pytorch_end2end.CTCLoss.forward">
-<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">logits</em>, <em class="sig-param">targets</em>, <em class="sig-param">logits_lengths</em>, <em class="sig-param">targets_lengths</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/modules/ctc_loss.html#CTCLoss.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCLoss.forward" title="Permalink to this definition">¶</a></dt>
-<dd><p>Computes CTC Loss</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>logits</strong> – Float or Double Tensor (network output)
-of shape <code class="docutils literal notranslate"><span class="pre">(sequence_length,</span> <span class="pre">batch_size,</span> <span class="pre">alphabet_size)</span></code> if <code class="docutils literal notranslate"><span class="pre">time_major</span></code> is True,
-else of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">sequence_length,</span> <span class="pre">alphabet_size)</span></code></p></li>
-<li><p><strong>targets</strong> – Tensor with targets of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">targets_sequence_length)</span></code></p></li>
-<li><p><strong>logits_lengths</strong> – Tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code> with lengths of sequences</p></li>
-<li><p><strong>targets_lengths</strong> – Tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code> with lengths of target sequences</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>tensor with CTC loss of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code> if <code class="docutils literal notranslate"><span class="pre">reduce</span> <span class="pre">is</span> <span class="pre">None</span></code> else of shape <code class="docutils literal notranslate"><span class="pre">(1,)</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="class">
