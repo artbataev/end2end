@@ -1,32 +1,21 @@
-import os
-import sys
-
 from torch.autograd import Function
 
-if "DEBUG_E2E" in os.environ:
-    module_base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    build_path = os.path.join(module_base, os.getenv("DEBUG_E2E"))
-    sys.path.append(build_path)
 
-import cpp_ctc_loss  # noqa: E402
-
-
-class CTCLossFunction(Function):
+class ForwardBackwardLossFunction(Function):
     @staticmethod
-    def forward(ctx, logits, targets, logits_lengths, targets_lengths, blank_idx=0):
+    def forward(ctx, engine, logits, targets, logits_lengths, targets_lengths):
         """
         Computes and returns CTC Loss, stores grads for backward computation
 
         :param ctx: storage for inner computations (to use in backward method)
+        :param engine: engine to compute forward-backward loss
         :param logits: Float or Double Tensor of shape [batch_size, sequence_length, alphabet_size]
         :param targets: Tensor with targets of shape [batch_size, targets_sequence_length]
         :param logits_lengths: Tensor of shape [batch_size] with lengths of sequences
         :param targets_lengths: Tensor of shape [batch_size] with lengths of target sequences
-        :param blank_idx: id of blank label, default 0
         :return: tensor with loss of shape [batch_size]
         """
-        ctc_engine = cpp_ctc_loss.CTCLossEngine(blank_idx)
-        loss, grads = ctc_engine.compute(logits, targets, logits_lengths, targets_lengths)
+        loss, grads = engine.compute(logits, targets, logits_lengths, targets_lengths)
         ctx.grads = grads
         return loss
 
@@ -43,4 +32,4 @@ class CTCLossFunction(Function):
         if grad_output.is_cuda:
             loss_grads = loss_grads.cuda(grad_output.get_device())
         grad = loss_grads.contiguous() * grad_output.contiguous().view(-1, 1, 1)
-        return grad, None, None, None, None
+        return None, grad, None, None, None

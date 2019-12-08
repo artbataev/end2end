@@ -1,7 +1,17 @@
 import torch.nn as nn
 import torch.nn.functional as F
+import os
+import sys
+from importlib import import_module
 
-from ..functions.ctc_loss import CTCLossFunction
+from ..functions.forward_backward import ForwardBackwardLossFunction
+
+if "DEBUG_E2E" in os.environ:
+    module_base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    build_path = os.path.join(module_base, os.getenv("DEBUG_E2E"))
+    sys.path.append(build_path)
+
+cpp_ctc_loss = import_module("cpp_ctc_loss")  # to avoid E402: module level import not at top
 
 
 class CTCLoss(nn.Module):
@@ -18,11 +28,12 @@ class CTCLoss(nn.Module):
 
     def __init__(self, size_average=None, reduce=None, after_logsoftmax=False, time_major=False, blank_idx=0):
         super(CTCLoss, self).__init__()
-        self._blank_index = blank_idx
+        self._blank_idx = blank_idx
         self._reduce = reduce
         self._size_average = size_average
         self._after_logsoftmax = after_logsoftmax
         self._time_major = time_major
+        self._engine = cpp_ctc_loss.CTCLossEngine(self._blank_idx)
 
     def forward(self, logits, targets, logits_lengths, targets_lengths):
         """
@@ -45,7 +56,11 @@ class CTCLoss(nn.Module):
             logits_logsoftmax = logits_logsoftmax.permute(1, 0, 2)
         # shape of logits_logsoftmax now: batch_size, sequence_length, alphabet_size
 
-        loss = CTCLossFunction().apply(logits_logsoftmax, targets, logits_lengths, targets_lengths, self._blank_index)
+        loss = ForwardBackwardLossFunction().apply(self._engine,
+                                                   logits_logsoftmax,
+                                                   targets,
+                                                   logits_lengths,
+                                                   targets_lengths)
 
         if self._reduce:
             if self._size_average:
