@@ -23,7 +23,15 @@ target_link_libraries(cpp_ctc_loss
     )
 
 # Gram-CTC loss
-# ...
+pybind11_add_module(cpp_gram_ctc_loss MODULE
+    ${INNER_LIBRARIES}
+    losses/gram_ctc_loss.h
+    losses/gram_ctc_loss.cpp
+    losses/gram_ctc_loss_py.cpp)
+
+target_link_libraries(cpp_gram_ctc_loss
+    PRIVATE ${TORCH_LIBRARIES}
+    )
 
 
 # Decoder
