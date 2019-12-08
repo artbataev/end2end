@@ -8,7 +8,7 @@
 #include "utils/math_utils.h"
 
 using scalar_t = double;
-constexpr auto kMinusInfinity = std::numeric_limits<scalar_t>::lowest();
+constexpr auto kMinusInfinity = -std::numeric_limits<scalar_t>::infinity();
 
 CTCLossEngine::CTCLossEngine(int blank_idx_) : blank_idx{blank_idx_} {}
 
