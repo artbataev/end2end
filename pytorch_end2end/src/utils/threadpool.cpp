@@ -7,7 +7,7 @@
 ThreadPool::ThreadPool(size_t num_threads_)
     : num_threads{num_threads_}, working{true} {
   pool.reserve(num_threads);
-  for (int _ = 0; _ < num_threads; _++) {
+  for (size_t i = 0; i < num_threads; ++i) {
     pool.emplace_back(std::thread([&] { task_runner(); }));
   }
 }

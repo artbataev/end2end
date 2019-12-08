@@ -10,7 +10,7 @@ std::tuple<at::Tensor, at::Tensor> ForwardBackwardBase::compute(
     const at::Tensor& logits_lengths_,
     const at::Tensor& targets_lengths_) {
   const auto src_device = logits_.device();
-  const auto work_device = torch::kCPU;
+  constexpr auto work_device = torch::kCPU;
 
   const auto logits = logits_.to(work_device).to(torch::kDouble).detach();
   const auto targets = targets_.to(work_device).to(torch::kLong);
@@ -31,12 +31,11 @@ std::tuple<at::Tensor, at::Tensor> ForwardBackwardBase::compute(
                            .device(work_device)
                            .requires_grad(false);
   auto losses = torch::zeros(batch_size, options);
-  auto grads =
-      torch::zeros({batch_size, logits.size(1), logits.size(2)}, options);
+  auto grads = torch::zeros_like(logits);
 
   {
     ThreadPool pool{static_cast<size_t>(batch_size)};
-    for (int i = 0; i < batch_size; i++) {
+    for (int i = 0; i < batch_size; ++i) {
       auto seq_len = logits_lengths_a[i];
       auto targets_len = targets_lengths_a[i];
       pool.add_task([this,

@@ -7,7 +7,8 @@
 
 #include "utils/math_utils.h"
 
-constexpr auto kMinusInfinity = -INFINITY;
+using scalar_t = double;
+constexpr auto kMinusInfinity = std::numeric_limits<scalar_t>::lowest();
 
 CTCLossEngine::CTCLossEngine(int blank_idx_) : blank_idx{blank_idx_} {}
 
@@ -19,8 +20,7 @@ void CTCLossEngine::compute_2d(
     int batch_i,
     torch::Tensor& losses,
     torch::Tensor& grads) {
-  const auto logits_2d_a = logits_2d.accessor<double, 2>();
-  using scalar_t = double;
+  const auto logits_2d_a = logits_2d.accessor<scalar_t, 2>();
 
   const auto ext_targets_len = targets_len * 2 + 1;
   auto extended_targets = torch::full(

@@ -13,7 +13,7 @@
 #include "utils/math_utils.h"
 #include "utils/threadpool.h"
 
-const double LOG_E_10 = std::log(10.0);
+const double kLogE10 = std::log(10.0);
 
 class CustomEnumerateVocab : public lm::EnumerateVocab {
  public:
@@ -100,7 +100,7 @@ double CTCDecoder::get_score_for_sentence(
     state = out_state;
     if (word_idx == 0) penalty += oov_penalty;
   }
-  return result / LOG_E_10 + penalty;
+  return result / kLogE10 + penalty;
 }
 
 double CTCDecoder::get_score_for_sentence(
@@ -275,7 +275,7 @@ CTCDecoder::get_next_prefix(std::shared_ptr<CTCDecoder::Prefix>& prefix,
           lm_model->BaseScore(&new_prefix->lm_state_before_last,
                               word_idx,
                               &new_prefix->lm_state) /
-              LOG_E_10;
+              kLogE10;
 
       new_prefix->num_oov_words_before_last = prefix->num_oov_words;
       new_prefix->num_oov_words = prefix->num_oov_words + (word_idx == 0);
@@ -291,7 +291,7 @@ CTCDecoder::get_next_prefix(std::shared_ptr<CTCDecoder::Prefix>& prefix,
           lm_model->BaseScore(&new_prefix->lm_state_before_last,
                               word_idx,
                               &new_prefix->lm_state) /
-              LOG_E_10;
+              kLogE10;
       new_prefix->num_oov_words_before_last = prefix->num_oov_words_before_last;
       new_prefix->num_oov_words =
           new_prefix->num_oov_words_before_last + (word_idx == 0);
@@ -444,8 +444,7 @@ std::tuple<at::Tensor, at::Tensor, std::vector<std::string>>
 CTCDecoder::decode_greedy(const at::Tensor& logits_,
                           const at::Tensor& logits_lengths_) {
   // collapse repeated, remove blank
-  const auto src_device = logits_.device();
-  const auto work_device = torch::kCPU;
+  constexpr auto work_device = torch::kCPU;
 
   const auto logits_lengths = logits_lengths_.to(work_device).to(torch::kLong);
   const auto batch_size = logits_lengths.size(0);

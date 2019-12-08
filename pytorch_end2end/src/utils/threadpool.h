@@ -20,8 +20,8 @@ class ThreadPool {
  private:
   void task_runner();
 
-  bool working;
   size_t num_threads;
+  bool working;
 
   std::vector<std::thread> pool;
   std::queue<std::function<void()>> tasks;
