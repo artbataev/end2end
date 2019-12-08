@@ -11,7 +11,7 @@ class ForwardBackwardBase {
                           int targets_len,
                           int batch_i,
                           torch::Tensor& losses,
-                          torch::Tensor& grads) = 0;
+                          torch::Tensor& grads) const = 0;
   virtual ~ForwardBackwardBase() = default;
   std::tuple<at::Tensor, at::Tensor> compute(const at::Tensor& logits,
                                              const at::Tensor& targets,

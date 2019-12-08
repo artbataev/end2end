@@ -19,7 +19,7 @@ void CTCLossEngine::compute_2d(
     int targets_len,
     int batch_i,
     torch::Tensor& losses,
-    torch::Tensor& grads) {
+    torch::Tensor& grads) const {
   const auto logits_2d_a = logits_2d.accessor<scalar_t, 2>();
 
   const auto ext_targets_len = targets_len * 2 + 1;

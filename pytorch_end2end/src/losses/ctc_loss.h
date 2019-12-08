@@ -19,7 +19,7 @@ class CTCLossEngine : public ForwardBackwardBase {
                   int targets_len,
                   int batch_i,
                   torch::Tensor& losses,
-                  torch::Tensor& grads) override;
+                  torch::Tensor& grads) const override;
 
   int blank_idx;
 };
