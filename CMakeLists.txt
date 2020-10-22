@@ -11,7 +11,7 @@ project(pytorch_end2end VERSION ${PROJECT_VERSION} LANGUAGES CXX)
 find_package(Torch REQUIRED)
 add_subdirectory(third_party/pybind11)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -54,4 +54,4 @@ add_library(kenlm ${KENLM_LM_SOURCE} ${KENLM_LM_COMMON_SOURCE})
 target_compile_definitions(kenlm PUBLIC -DKENLM_MAX_ORDER=${KENLM_MAX_ORDER})
 target_link_libraries(kenlm kenlm_util ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
-add_subdirectory(pytorch_end2end/src)
+add_subdirectory(src)
