@@ -2,5 +2,7 @@
 BasedOnStyle: Google
 BinPackParameters: false
 BinPackArguments: false
+AlignConsecutiveAssignments: false
 PointerAlignment: Left
 DerivePointerAlignment: false
+IncludeBlocks: Preserve
