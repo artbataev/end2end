@@ -1,8 +1,7 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -12,30 +11,32 @@
   
 
   
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
   
   
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
     
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with PyTorch" href="README.html" /> 
+    <link rel="prev" title="&lt;no title&gt;" href="README.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -49,7 +50,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home"> End2End
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> End2End
           
 
           
@@ -72,6 +73,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -79,11 +81,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="README.html">Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with PyTorch</a></li>
-</ul>
-<ul class="current">
+              <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">pytorch_end2end package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-pytorch_end2end">Module contents</a></li>
 </ul>
@@ -93,6 +91,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -131,7 +130,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="index.html">Docs</a> &raquo;</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
       <li>pytorch_end2end package</li>
     
@@ -156,28 +155,9 @@
 <h1>pytorch_end2end package<a class="headerlink" href="#pytorch-end2end-package" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="module-pytorch_end2end">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pytorch_end2end" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pytorch_end2end.CTCLoss">
-<em class="property">class </em><code class="sig-prename descclassname">pytorch_end2end.</code><code class="sig-name descname">CTCLoss</code><span class="sig-paren">(</span><em class="sig-param">size_average=None</em>, <em class="sig-param">reduce=None</em>, <em class="sig-param">after_logsoftmax=False</em>, <em class="sig-param">time_major=False</em>, <em class="sig-param">blank_idx=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/modules/ctc_loss.html#CTCLoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCLoss" title="Permalink to this definition">¶</a></dt>
-<dd><p>Criterion to compute CTC Loss as described in <a class="reference external" href="http://www.cs.toronto.edu/~graves/icml_2006.pdf">http://www.cs.toronto.edu/~graves/icml_2006.pdf</a></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>size_average</strong> – if compute average loss (only if reduce is True)</p></li>
-<li><p><strong>reduce</strong> – if compute mean or average loss (if None, returns full tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code>)</p></li>
-<li><p><strong>after_logsoftmax</strong> – <p>if logsoftmax is used before passing neural network outputs</p>
-<p>(else takes pure network outputs)</p>
-</p></li>
-<li><p><strong>time_major</strong> – if logits are time major (or batch major), default <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
-<li><p><strong>blank_idx</strong> – id of blank label, default <code class="docutils literal notranslate"><span class="pre">0</span></code></p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="class">
+<dl class="py class">
 <dt id="pytorch_end2end.CTCDecoder">
-<em class="property">class </em><code class="sig-prename descclassname">pytorch_end2end.</code><code class="sig-name descname">CTCDecoder</code><span class="sig-paren">(</span><em class="sig-param">beam_width=100</em>, <em class="sig-param">after_logsoftmax=False</em>, <em class="sig-param">blank_idx=0</em>, <em class="sig-param">time_major=False</em>, <em class="sig-param">labels=None</em>, <em class="sig-param">lm_path=None</em>, <em class="sig-param">lmwt=1.0</em>, <em class="sig-param">wip=1.0</em>, <em class="sig-param">oov_penalty=-10</em>, <em class="sig-param">case_sensitive=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">pytorch_end2end.</code><code class="sig-name descname">CTCDecoder</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">beam_width</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">after_logsoftmax</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">blank_idx</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">time_major</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">labels</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">lm_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">lmwt</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">wip</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">oov_penalty</span><span class="o">=</span><span class="default_value">- 10</span></em>, <em class="sig-param"><span class="n">case_sensitive</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decoder class to perform CTC decoding</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -200,9 +180,9 @@ Greedy decoding ignores this parameter and can work with pure logits, or after l
 </ul>
 </dd>
 </dl>
-<dl class="method">
+<dl class="py method">
 <dt id="pytorch_end2end.CTCDecoder.decode">
-<code class="sig-name descname">decode</code><span class="sig-paren">(</span><em class="sig-param">logits</em>, <em class="sig-param">logits_lengths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder.decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder.decode" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">decode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">logits</span></em>, <em class="sig-param"><span class="n">logits_lengths</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder.decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder.decode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs prefix beam search decoding as described in <a class="reference external" href="https://arxiv.org/abs/1408.2873">https://arxiv.org/abs/1408.2873</a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -231,9 +211,9 @@ If <code class="docutils literal notranslate"><span class="pre">labels</span> <s
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="pytorch_end2end.CTCDecoder.decode_greedy">
-<code class="sig-name descname">decode_greedy</code><span class="sig-paren">(</span><em class="sig-param">logits</em>, <em class="sig-param">logits_lengths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder.decode_greedy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder.decode_greedy" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">decode_greedy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">logits</span></em>, <em class="sig-param"><span class="n">logits_lengths</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/decoders/ctc_decoder.html#CTCDecoder.decode_greedy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCDecoder.decode_greedy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs greedy (argmax) decoding</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -264,28 +244,52 @@ If <code class="docutils literal notranslate"><span class="pre">labels</span> <s
 
 </dd></dl>
 
-<dl class="class">
+<dl class="py class">
 <dt id="pytorch_end2end.CTCEncoder">
 <em class="property">class </em><code class="sig-prename descclassname">pytorch_end2end.</code><code class="sig-name descname">CTCEncoder</code><span class="sig-paren">(</span><em class="sig-param">characters</em>, <em class="sig-param">blank_id=0</em>, <em class="sig-param">transform_fn=&lt;method 'upper' of 'str' objects&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simple CTC-encoder for text</p>
-<dl class="method">
+<dl class="py method">
 <dt id="pytorch_end2end.CTCEncoder.clean">
-<code class="sig-name descname">clean</code><span class="sig-paren">(</span><em class="sig-param">text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.clean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.clean" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">clean</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">text</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.clean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.clean" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="pytorch_end2end.CTCEncoder.decode">
-<code class="sig-name descname">decode</code><span class="sig-paren">(</span><em class="sig-param">ids_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.decode" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">decode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ids_list</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.decode" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="pytorch_end2end.CTCEncoder.decode_pure">
-<code class="sig-name descname">decode_pure</code><span class="sig-paren">(</span><em class="sig-param">ids_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.decode_pure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.decode_pure" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">decode_pure</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ids_list</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.decode_pure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.decode_pure" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="pytorch_end2end.CTCEncoder.encode">
-<code class="sig-name descname">encode</code><span class="sig-paren">(</span><em class="sig-param">text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.encode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.encode" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">encode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">text</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/encoders/text_encoders.html#CTCEncoder.encode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCEncoder.encode" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="pytorch_end2end.CTCLoss">
+<em class="property">class </em><code class="sig-prename descclassname">pytorch_end2end.</code><code class="sig-name descname">CTCLoss</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">size_average</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">reduce</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">after_logsoftmax</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_major</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">blank_idx</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pytorch_end2end/modules/ctc_loss.html#CTCLoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytorch_end2end.CTCLoss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Criterion to compute CTC Loss as described in <a class="reference external" href="http://www.cs.toronto.edu/~graves/icml_2006.pdf">http://www.cs.toronto.edu/~graves/icml_2006.pdf</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>size_average</strong> – if compute average loss (only if reduce is True)</p></li>
+<li><p><strong>reduce</strong> – if compute mean or average loss (if None, returns full tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code>)</p></li>
+<li><p><strong>after_logsoftmax</strong> – <p>if logsoftmax is used before passing neural network outputs</p>
+<p>(else takes pure network outputs)</p>
+</p></li>
+<li><p><strong>time_major</strong> – if logits are time major (or batch major), default <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
+<li><p><strong>blank_idx</strong> – id of blank label, default <code class="docutils literal notranslate"><span class="pre">0</span></code></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt id="pytorch_end2end.CTCLoss.training">
+<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#pytorch_end2end.CTCLoss.training" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -302,7 +306,7 @@ If <code class="docutils literal notranslate"><span class="pre">labels</span> <s
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
       
-        <a href="README.html" class="btn btn-neutral float-left" title="Losses and decoders for end-to-end Speech Recognition and Optical Character Recognition with PyTorch" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="README.html" class="btn btn-neutral float-left" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -311,11 +315,19 @@ If <code class="docutils literal notranslate"><span class="pre">labels</span> <s
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2018, Vladimir Bataev
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -326,7 +338,6 @@ If <code class="docutils literal notranslate"><span class="pre">labels</span> <s
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {
