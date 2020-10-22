@@ -28,7 +28,7 @@ script:
   - flake8 pytorch_end2end
   - flake8 tests
   # install module
-  - python setup.py install
+  - pip install -e .
   # run tests
   - python -m tests.test_ctc
   - python -m tests.test_ctc_decoder
