@@ -4,7 +4,7 @@ import os
 import sys
 from importlib import import_module
 
-from ..functions.forward_backward import ForwardBackwardLossFunction
+from pytorch_end2end.functions.forward_backward import ForwardBackwardLossFunction
 
 if "DEBUG_E2E" in os.environ:
     module_base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))

@@ -5,8 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from .ctc_loss import CTCLoss as WarpCTCLoss
-from ..utils.alignment import get_alignment_3d
+from pytorch_end2end.ctc_loss import CTCLoss as WarpCTCLoss
+from pytorch_end2end.utils.alignment import get_alignment_3d
 
 
 class CTCLossSegmented(nn.Module):
