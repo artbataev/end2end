@@ -21,6 +21,7 @@ pybind11_add_module(cpp_ctc_loss MODULE
 
 target_link_libraries(cpp_ctc_loss
     PRIVATE ${TORCH_LIBRARIES}
+    PRIVATE ${TORCH_PYTHON_LIBRARY}
     )
 
 # Gram-CTC loss
@@ -32,6 +33,7 @@ pybind11_add_module(cpp_gram_ctc_loss MODULE
 
 target_link_libraries(cpp_gram_ctc_loss
     PRIVATE ${TORCH_LIBRARIES}
+    PRIVATE ${TORCH_PYTHON_LIBRARY}
     )
 
 
@@ -44,5 +46,6 @@ pybind11_add_module(cpp_ctc_decoder MODULE
 
 target_link_libraries(cpp_ctc_decoder
     PRIVATE ${TORCH_LIBRARIES}
+    PRIVATE ${TORCH_PYTHON_LIBRARY}
     PUBLIC kenlm
     )
