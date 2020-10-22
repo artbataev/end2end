@@ -20,12 +20,10 @@ Under active development.
 ## How to install
 
 **Requirements:**
-- Python 3.4+
-- PyTorch 1.0 and higher
-- numpy
-- numba
+- Python 3.6+
+- Tested with PyTorch 1.6.0+ (maybe compatible with other versions)
 
-1. Install PyTorch 1.0 from [pytorch.org](https://pytorch.org), e.g.
+1. Install PyTorch from [pytorch.org](https://pytorch.org), e.g.
     ```bash
     pip install torch
     ```
