@@ -1,4 +1,5 @@
-numba>=0.46
+numba>=0.51.2
 numpy>=1.15
 ninja>=1.8.2
 tqdm
+cmake>=3.16.3
