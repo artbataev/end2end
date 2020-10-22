@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Function, Variable
 
-from .utils import log_sum_exp
+from pytorch_end2end.functions.utils import log_sum_exp
 
 
 @numba.jit(nogil=True)

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from ..functions.ctc_without_blank import CTCWithoutBlankLossFunction
+from pytorch_end2end.functions.ctc_without_blank import CTCWithoutBlankLossFunction
 
 
 class CTCWithoutBlankLoss(nn.Module):

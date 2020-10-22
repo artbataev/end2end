@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from ..utils.alignment import get_alignment_3d
+from pytorch_end2end.utils.alignment import get_alignment_3d
 
 
 class AlignedTargetsLoss(nn.Module):
