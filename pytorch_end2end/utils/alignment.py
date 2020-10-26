@@ -106,10 +106,10 @@ def _get_alignment_ctc_1d(logits, targets):
     return best_labeling
 
 
-def get_alignment_3d(logits_logsoftmax, targets, logits_lengths, targets_lengths, is_ctc=True):
-    batch_size = logits_logsoftmax.size()[0]
+def get_alignment_3d(log_probs, targets, logits_lengths, targets_lengths, is_ctc=True):
+    batch_size = log_probs.size()[0]
 
-    logits_logsoftmax_np = logits_logsoftmax.cpu().data.numpy()
+    logits_logsoftmax_np = log_probs.cpu().data.numpy()
     targets_np = targets.data.cpu().numpy()
     logits_lengths_np = logits_lengths.data.cpu().numpy()
     targets_lengths_np = targets_lengths.data.cpu().numpy()
@@ -130,9 +130,9 @@ def get_alignment_3d(logits_logsoftmax, targets, logits_lengths, targets_lengths
     for t in threads:
         t.join()
 
-    targets_aligned = torch.LongTensor(batch_size, logits_logsoftmax.size()[1]).zero_()
+    targets_aligned = torch.full([batch_size, log_probs.shape[1]], fill_value=-100, dtype=torch.long)
     while not que.empty():
         i, best_labeling = que.get()
-        targets_aligned[i, :logits_lengths_np[i]] = torch.LongTensor(best_labeling)
+        targets_aligned[i, :logits_lengths_np[i]] = torch.from_numpy(best_labeling)
 
     return targets_aligned
