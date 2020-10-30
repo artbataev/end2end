@@ -18,7 +18,11 @@ class CTCWithoutBlankLoss(nn.Module):
             logits_logsoftmax = nn.LogSoftmax(dim=2)(logits)
 
         loss = CTCWithoutBlankLossFunction().apply(
-            logits_logsoftmax, targets, logits_lengths, targets_lengths, self._space_idx)
+            logits_logsoftmax,
+            targets.to(torch.long),
+            logits_lengths.to(torch.long),
+            targets_lengths.to(torch.long),
+            self._space_idx)
         if self._reduce:
             return loss.sum()
         else:
